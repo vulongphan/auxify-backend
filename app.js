@@ -131,8 +131,7 @@ app.get('/callback', function (req, res) {
             access_token: access_token,
             refresh_token: refresh_token,
             queue: [],
-            default_playlist: "",
-            createdAt: Date.now()/1000
+            default_playlist: ""
           },
           headers: {'Content-Type' : 'application/json'},
           json: true,

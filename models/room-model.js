@@ -9,7 +9,7 @@ const Room = new Schema(
         refresh_token: {type: String, required: true},
         queue: {type: [], required: true},
         default_playlist: {},
-        createdAt: {type: Date, expires: 3600}
+        createdAt: {type: Date, expires: 3600, default: Date.now}
     },
 )
 
