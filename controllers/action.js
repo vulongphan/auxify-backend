@@ -242,7 +242,8 @@ module.exports = {
     addToQueue,
     removeFromQueue,
     vote,
-    downVote,
+    //upVote,
+    //downVote,
     playDefault,
     deleteRoom,
     //pickEndtime
