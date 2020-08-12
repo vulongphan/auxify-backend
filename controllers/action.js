@@ -241,7 +241,7 @@ module.exports = {
     getRoom,
     addToQueue,
     removeFromQueue,
-    upVote,
+    vote,
     downVote,
     playDefault,
     deleteRoom,
