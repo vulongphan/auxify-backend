@@ -98,7 +98,7 @@ removeFromQueue = (req, res) => {
         }
     })
 }
-
+/*
 upVote = (req, res) => {
     const room_id = req.params.id;
     const index = req.body.index;
@@ -142,6 +142,44 @@ downVote = (req, res) => {
             Room.updateOne({id: room_id}, {queue: queue}, (err) => {
                 if (err) return res.status(400).json(err);
                 else return res.status(200).json({success: true});
+            })
+        }
+    })
+}
+*/
+
+//combine upVote and downVote to only one function vote
+vote = (req, res) => {
+    const room_id = req.params.id;
+    const index = req.body.index;
+    const amount = req.body.amount;
+
+    Room.findOne({ id: room_id }, (err, room) => {
+        if (!err && room) {
+            // i is the index where vote is changed, amount is the number of vote changed
+            const sortQueue = (queue, i, amount) => {
+                const swap = (arr, i, j) => {
+                    const temp = arr[i];
+                    arr[i] = arr[j];
+                    arr[j] = temp;
+                }
+                if (amount > 0 && i > 0 && queue[i - 1].vote < queue[i].vote){
+                    var j = i - 1;
+                    while (j > 0 && queue[j - 1].vote < queue[i].vote) j--;
+                    swap(queue, i, j);
+                }
+                else if (amount < 0 && i < queue.length - 1 && queue[i + 1].vote > queue[i].vote){
+                    var j = i + 1;
+                    while (j < queue.length - 1 && queue[j + 1].vote > queue[i].vote) j++;
+                    swap(queue, i, j);
+                }
+            }
+            const queue = room.queue;
+            queue[index].vote += amount;
+            sortQueue(queue, index, amount);
+            Room.updateOne({ id: room_id }, { queue: queue }, (err) => {
+                if (err) return res.status(400).json(err);
+                else return res.status(200).json({ success: true });
             })
         }
     })
