@@ -16,5 +16,7 @@ router.post('/downVote/:id', action.downVote);
 router.post('/vote/:id', action.vote);
 router.post('/playlist/:id', action.playDefault);
 router.get('/deleteRoom/:id',action.deleteRoom);
+router.post('/updateToken/:id', action.updateToken);
+router.post('/updateEndtime/:id', action.updateEndtime);
 
 module.exports = router;

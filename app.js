@@ -49,7 +49,7 @@ var access_token = null;
 var refresh_token = null;
 var room_id = null;
 var current_time = null;
-var duration = 3600; //an hour in sec
+var duration = 3600 * 1000; //the duration in which the access_token will expire (in mili sec)
 
 db.on('error', console.error.bind(console, 'MongoDB connection error:'));
 
@@ -123,6 +123,7 @@ app.get('/callback', function (req, res) {
         });
 
         room_id = generateRandomString(4);
+        current_time = Date.now(); //in mili sec
 
         var auxifyOptions = {
           url: server_uri + '/api/room',
@@ -131,7 +132,9 @@ app.get('/callback', function (req, res) {
             access_token: access_token,
             refresh_token: refresh_token,
             queue: [],
-            default_playlist: ""
+            default_playlist: "",
+            end_time: current_time + duration,
+
           },
           headers: {'Content-Type' : 'application/json'},
           json: true,
@@ -159,6 +162,7 @@ app.get('/callback', function (req, res) {
   }
 });
 
+/*
 app.get('/refresh_token', function (req, res) {
 
   // requesting access token from refresh token
@@ -182,6 +186,7 @@ app.get('/refresh_token', function (req, res) {
     }
   });
 });
+*/
 
 app.use('/api', auxifyRouter);
 

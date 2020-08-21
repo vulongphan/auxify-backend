@@ -202,6 +202,7 @@ playDefault = (req, res) => {
 
 }
 
+
 deleteRoom = (req, res) => {
     const room_id = req.params.id;
 
@@ -218,10 +219,27 @@ deleteRoom = (req, res) => {
     })
 }
 
-/*
-pickEndtime = (req, res) => {
-    const end_time = req.body.end_time;
+updateToken = (req, res) => {
     const room_id = req.params.id;
+    const access_token = req.body.access_token;
+
+    Room.findOne({id: room_id}, (err, room) => {
+        if (!err && room) {
+            Room.updateOne({id: room_id}, {access_token: access_token}, (err, room) => {
+                if (err) return res.status(400).json(err);
+                else return res.status(200).json({success: true})
+            })
+        }
+        else if (err) return res.status(404).json({ err })
+        else return res.status(400).json ({ error: "No room found with the given id"})
+    })
+
+}
+
+
+updateEndtime = (req, res) => {
+    const room_id = req.params.id;
+    const end_time = req.body.end_time;
 
     Room.findOne({id: room_id}, (err, room) => {
         if (!err && room) {
@@ -234,7 +252,7 @@ pickEndtime = (req, res) => {
         else return res.status(400).json({error: "No room found with the given id"})
     })
 }
-*/
+
 
 module.exports = {
     addRoom,
@@ -246,5 +264,6 @@ module.exports = {
     //downVote,
     playDefault,
     deleteRoom,
-    //pickEndtime
+    updateToken,
+    updateEndtime,
 }
