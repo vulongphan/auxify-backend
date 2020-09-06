@@ -20,7 +20,7 @@ const Room = new Schema(
         refresh_token: { type: String, required: true },
         queue: { type: [], required: true },
         default_playlist: {},
-        createdAt: { type: Date, expires: 3600, default: Date.now },
+        createdAt: { type: Date, default: Date.now },
         nowPlaying: {
             type: nowPlaying, default: {
                 playing: false,
