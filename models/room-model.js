@@ -1,16 +1,37 @@
 const mongoose = require('mongoose');
 const { host } = require('../data');
 const Schema = mongoose.Schema;
-const duration = 3600; //the duration for 4 hour long session
+
+const nowPlaying = new Schema(
+    {
+        playing: { type: Boolean },
+        currentPosition: { type: Number },
+        name: { type: String },
+        albumArt: {},
+        artists: { type: [] },
+        duration: { type: Number }
+    },
+)
+
 const Room = new Schema(
     {
-        id: {type: String, required: true},
-        access_token: {type: String, required: true},
-        refresh_token: {type: String, required: true},
-        queue: {type: [], required: true},
+        id: { type: String, required: true },
+        access_token: { type: String, required: true },
+        refresh_token: { type: String, required: true },
+        queue: { type: [], required: true },
         default_playlist: {},
-        end_time: {type: Number, required: true},
-        createdAt: {type: Date, default: Date.now},
+        createdAt: { type: Date, expires: 3600, default: Date.now },
+        nowPlaying: {
+            type: nowPlaying, default: {
+                playing: false,
+                currentPosition: 0,
+                name: null,
+                albumArt: null,
+                artists: null,
+                duration: 0,
+            }
+        },
+        count: { type: Number }
     },
 )
 //Để thay đổi expire time của collection rooms của mình, thì mình truy cập vào db của mình (mongo 127.0.0.1:27017/auxifyDB) trên và sau đó gõ command này 

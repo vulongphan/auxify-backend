@@ -1,4 +1,5 @@
 const Room = require('../models/room-model');
+var SpotifyWebApi = require('spotify-web-api-node');
 
 addRoom = (req, res) => {
     const body = req.body;
@@ -73,7 +74,7 @@ addToQueue = (req, res) => {
                 }
             })
         } else if (err) {
-            res.status(404).json({err});
+            res.status(404).json({ err });
         } else {
             return res.status(400).json({ error: "Song already in the queue" });
         }
@@ -98,55 +99,6 @@ removeFromQueue = (req, res) => {
         }
     })
 }
-/*
-upVote = (req, res) => {
-    const room_id = req.params.id;
-    const index = req.body.index;
-
-    Room.findOne({ id: room_id }, (err, room) => {
-        if (!err && room) {
-            const swap = (arr, i, j) => {
-                const temp = arr[i];
-                arr[i] = arr[j];
-                arr[j] = temp;
-            }
-            const queue = room.queue;
-            queue[index].vote += 1;
-            if (index > 0 && queue[index].vote > queue[index - 1].vote) {
-                swap(queue, index, index - 1);
-            }
-            Room.updateOne({ id: room_id }, { queue: queue }, (err) => {
-                if (err) return res.status(400).json(err);
-                else return res.status(200).json({ success: true });
-            })
-        }
-    })
-}
-
-downVote = (req, res) => {
-    const room_id = req.params.id;
-    const index = req.body.index;
-
-    Room.findOne({id: room_id}, (err, room) => {
-        if (!err && room){
-            const swap = (arr, i, j) => {
-                const temp = arr[i];
-                arr[i] = arr[j];
-                arr[j] = temp;
-            }
-            const queue = room.queue;
-            queue[index].vote -= 1;
-            if (index < queue.length - 1 && queue[index].vote < queue[index + 1].vote){
-                swap(queue, index, index + 1);
-            }
-            Room.updateOne({id: room_id}, {queue: queue}, (err) => {
-                if (err) return res.status(400).json(err);
-                else return res.status(200).json({success: true});
-            })
-        }
-    })
-}
-*/
 
 //combine upVote and downVote to only one function vote
 vote = (req, res) => {
@@ -163,12 +115,12 @@ vote = (req, res) => {
                     arr[i] = arr[j];
                     arr[j] = temp;
                 }
-                if (amount > 0 && i > 0 && queue[i - 1].vote < queue[i].vote){
+                if (amount > 0 && i > 0 && queue[i - 1].vote < queue[i].vote) {
                     var j = i - 1;
                     while (j > 0 && queue[j - 1].vote < queue[i].vote) j--;
                     swap(queue, i, j);
                 }
-                else if (amount < 0 && i < queue.length - 1 && queue[i + 1].vote > queue[i].vote){
+                else if (amount < 0 && i < queue.length - 1 && queue[i + 1].vote > queue[i].vote) {
                     var j = i + 1;
                     while (j < queue.length - 1 && queue[j + 1].vote > queue[i].vote) j++;
                     swap(queue, i, j);
@@ -189,15 +141,15 @@ playDefault = (req, res) => {
     const room_id = req.params.id;
     const playlist = req.body.default_playlist;
 
-    Room.findOne({id: room_id}, (err, room) => {
+    Room.findOne({ id: room_id }, (err, room) => {
         if (!err && room) {
-            Room.updateOne({id: room_id}, {default_playlist: playlist }, (err, room) => {
+            Room.updateOne({ id: room_id }, { default_playlist: playlist }, (err, room) => {
                 if (err) return res.status(400).json(err);
-                else return res.status(200).json({success: true})
+                else return res.status(200).json({ success: true })
             })
         }
         else if (err) return res.status(404).json({ err })
-        else return res.status(400).json ({ error: "No room found with the given id"})
+        else return res.status(400).json({ error: "No room found with the given id" })
     })
 
 }
@@ -206,50 +158,95 @@ playDefault = (req, res) => {
 deleteRoom = (req, res) => {
     const room_id = req.params.id;
 
-    Room.findOne({id: room_id}, (err, room) => {
-        if (!err && room) {
-            Room.deleteOne({id: room_id}, (err) => {
-                if (err) return res.status(404).json({err});
-                else return res.status(200).json({success: true})
-            })
-        }
-        else if (err) return res.status(404).json({err});
-        else return res.status(400).json({error: "No room found with the given id"})
-
+    Room.deleteOne({ id: room_id }, (err) => {
+        if (err) return res.status(404).json({ err });
+        else return res.status(200).json({ success: true })
     })
 }
 
 updateToken = (req, res) => {
     const room_id = req.params.id;
     const access_token = req.body.access_token;
-
-    Room.findOne({id: room_id}, (err, room) => {
-        if (!err && room) {
-            Room.updateOne({id: room_id}, {access_token: access_token}, (err, room) => {
-                if (err) return res.status(400).json(err);
-                else return res.status(200).json({success: true})
-            })
-        }
-        else if (err) return res.status(404).json({ err })
-        else return res.status(400).json ({ error: "No room found with the given id"})
-    })
-
-}
-
-
-updateEndtime = (req, res) => {
-    const room_id = req.params.id;
     const end_time = req.body.end_time;
 
-    Room.findOne({id: room_id}, (err, room) => {
-        if (!err && room) {
-            Room.updateOne({id: room_id}, {end_time: end_time}, (err) => {
-                if (err) return res.status(400).json({err});
-                else return res.status(200).json({success: true})
-            })
+    Room.updateOne({ id: room_id }, { access_token: access_token, end_time: end_time }, (err) => {
+        if (err) return res.status(400).json(err);
+        else return res.status(200).json({ success: true })
+    })
+}
+
+getNowPlaying = (req, res) => {
+    const room_id = req.params.id;
+    const count = req.body.count;
+
+    Room.findOne({ id: room_id }, (err, room) => {
+        var s = new SpotifyWebApi();
+        s.setAccessToken(room.access_token);
+
+        // play the next song
+        function play(room) {
+            var options;
+            //play the next song in the queue
+            if (room.queue.length > 0) {
+                options = {
+                    uris: [room.queue[0].uri],
+                };
+                s.play(options)
+                    .then(async function () {
+                        await Room.updateOne({ id: room_id }, { $pop: { queue: -1 } }) //remove the next song from the queue after being played
+                    })
+                    .catch(err => console.log(err));
+            }
+            //if queue is empty, play from default playlist;
+            else if (room.default_playlist) {
+                options = {
+                    context_uri: room.default_playlist.uri,
+                }
+                s.play(options)
+                    .catch(err => console.log(err));
+            }
         }
-        else if (err) return res.status(404).json({err})
-        else return res.status(400).json({error: "No room found with the given id"})
+
+        //getNowPlaying
+        if (!err && room) {
+            s.getMyCurrentPlaybackState({
+            })
+                .then(function (data) {
+                    const body = data.body;
+                    const nowPlaying = {
+                        playing: true,
+                        currentPosition: body.progress_ms,
+                        name: body.item.name,
+                        albumArt: body.item.album.images[0].url,
+                        artists: body.item.artists,
+                        duration: body.item.duration_ms,
+                    }
+                    Room.updateOne({ id: room_id }, { nowPlaying: nowPlaying }, (err) => {
+                        if (err) return res.status(400).json(err);
+                        else return res.status(200).json({ success: true, data: nowPlaying });
+                    })
+                    //check if song is about to end, and play next song
+                    const left = nowPlaying.duration - nowPlaying.currentPosition;
+                    if (nowPlaying.playing && left <= count) {
+                        play(room);
+                    }
+                }, function (error) {
+                    const nowPlaying = {
+                        playing: false,
+                        currentPosition: 0,
+                        name: null,
+                        albumArt: null,
+                        artists: null,
+                        duration: 0,
+                    }
+                    Room.updateOne({ id: room_id }, { nowPlaying: nowPlaying }, (err) => {
+                        if (err) return res.status(400).json(err);
+                        else return res.status(200).json({ success: true, error: error });
+                    })
+                });
+        }
+        else if (err) return res.status(404).json({ err });
+        else return res.status(400).json({ error: "No room found with the given id" })
     })
 }
 
@@ -260,10 +257,8 @@ module.exports = {
     addToQueue,
     removeFromQueue,
     vote,
-    //upVote,
-    //downVote,
     playDefault,
     deleteRoom,
     updateToken,
-    updateEndtime,
+    getNowPlaying,
 }

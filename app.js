@@ -146,6 +146,26 @@ app.get('/callback', function (req, res) {
           else console.log(res.body);
         })
 
+        //set up interval for getNowPlaying
+        const count = 2000;
+        var intervalOptions = {
+          url: server_uri + '/api/nowPlaying/' + room_id,
+          body: {
+            count: count,
+          },
+          headers: { 'Content-Type': 'application/json' },
+          json: true,
+        }
+
+        const nowPlayingInterval = setInterval(function () {
+          request.post(intervalOptions, function (err, res) {
+            if (error) console.log(err);
+            else console.log(res.body);
+          })
+        }, count);
+
+        //clearInterval(nowPlayingInterval);
+
         // we can also pass the token to the browser to make requests from there
         res.redirect(client_uri + '/room#' +
           querystring.stringify({
