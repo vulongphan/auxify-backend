@@ -157,6 +157,8 @@ app.get('/callback', function (req, res) {
           json: true,
         }
 
+        //here we continue calling this function (keep sending POST request) so that we can keep making the router call getnowPlaying() function
+        //also note that we also check when to play the next song in getnowPlaying()  
         const nowPlayingInterval = setInterval(function () {
           request.post(intervalOptions, function (err, res) {
             if (error) console.log(err);

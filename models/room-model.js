@@ -20,7 +20,6 @@ const Room = new Schema(
         refresh_token: { type: String, required: true },
         queue: { type: [], required: true },
         default_playlist: {},
-        createdAt: { type: Date, default: Date.now },
         nowPlaying: {
             type: nowPlaying, default: {
                 playing: false,
@@ -31,7 +30,11 @@ const Room = new Schema(
                 duration: 0,
             }
         },
-        count: { type: Number }
+        count: { type: Number },
+        //add a new attribute in order to determine the host at front end
+        host_known: {type: Boolean, required: true, default: true},
+        createdAt: { type: Date, default: Date.now },
+        end_time: {type: Number, required: true}
     },
 )
 //Để thay đổi expire time của collection rooms của mình, thì mình truy cập vào db của mình (mongo 127.0.0.1:27017/auxifyDB) trên và sau đó gõ command này 

@@ -175,14 +175,21 @@ updateToken = (req, res) => {
     })
 }
 
+updateHost = async (req, res) => {
+    const room_id = req.params.id;
+    const host_known = req.body.host_known;
+
+    await Room.updateOne({ id: room_id }, { host_known: host_known }, (err) => {
+        if (err) return res.status(400).json(err);
+        else return res.status(200).json({ success: true })
+    })
+}
+
 getNowPlaying = (req, res) => {
     const room_id = req.params.id;
     const count = req.body.count;
 
     Room.findOne({ id: room_id }, (err, room) => {
-        var s = new SpotifyWebApi();
-        s.setAccessToken(room.access_token);
-
         // play the next song
         function play(room) {
             var options;
@@ -209,6 +216,8 @@ getNowPlaying = (req, res) => {
 
         //getNowPlaying
         if (!err && room) {
+            var s = new SpotifyWebApi();
+            s.setAccessToken(room.access_token);
             s.getMyCurrentPlaybackState({
             })
                 .then(function (data) {
@@ -260,5 +269,6 @@ module.exports = {
     playDefault,
     deleteRoom,
     updateToken,
+    updateHost,
     getNowPlaying,
 }
