@@ -4,6 +4,8 @@
 For your reference cách t deploy local mongodb lên world wide web: https://www.youtube.com/watch?v=Ir68GVsNWB4
 
 3. Để thay đổi expire time của collection rooms của mình, thì mình truy cập vào db của mình như trên và sau đó gõ command này 
-db.runCommand( { "collMod":"rooms", "index": { "name": "createdAt_1", "expireAfterSeconds": 10, } } ). Cái value của field "expireAfterSeconds" là tuỳ mình set nhé
+db.runCommand( { "collMod":"rooms", "index": { "name": "createdAt_1", "expireAfterSeconds": 14400, } } ). Cái value của field "expireAfterSeconds" là tuỳ mình set nhé
+
+4. To set the expire time for the collection, run this command `db.rooms.ensureIndex( { "createdAt": 1 }, { expireAfterSeconds: 14400 } )`
 
 
