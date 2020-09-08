@@ -12,6 +12,7 @@ router.post('/vote/:id', action.vote);
 router.post('/playlist/:id', action.playDefault);
 router.get('/deleteRoom/:id',action.deleteRoom);
 router.post('/updateToken/:id', action.updateToken);
+router.post('/updateHost/:id', action.updateHost);
 router.post('/nowPlaying/:id', action.getNowPlaying);
 
 module.exports = router;
