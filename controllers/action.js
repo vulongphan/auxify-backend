@@ -206,8 +206,12 @@ getNowPlaying = (req, res) => {
             }
             //if queue is empty, play from default playlist;
             else if (room.default_playlist) {
+                var position = Math.floor(Math.random() * room.default_playlist.tracks.total)
                 options = {
                     context_uri: room.default_playlist.uri,
+                    offset: {
+                        position: position
+                    }
                 }
                 s.play(options)
                     .catch(err => console.log(err));
