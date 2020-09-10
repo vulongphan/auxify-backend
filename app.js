@@ -54,7 +54,7 @@ var duration = 3600 * 1000; //the duration in which the access_token will expire
 db.on('error', console.error.bind(console, 'MongoDB connection error:'));
 
 app.use(express.static(__dirname + '/public'))
-  .use(cors({origin: true, credentials: true}))
+  .use(cors({ origin: true, credentials: true }))
   .use(cookieParser())
   .use(bodyParser.urlencoded({ extended: true }))
   .use(bodyParser.json())
@@ -136,7 +136,7 @@ app.get('/callback', function (req, res) {
             end_time: current_time + duration,
 
           },
-          headers: {'Content-Type' : 'application/json'},
+          headers: { 'Content-Type': 'application/json' },
           json: true,
         }
 
@@ -163,10 +163,15 @@ app.get('/callback', function (req, res) {
           request.post(intervalOptions, function (err, res) {
             if (error) console.log(err);
             else console.log(res.body);
+          });
+          //make get request to check when the room is not found then clear the interval
+          request.get(server_uri + '/room/' + room_id, function (err, res, body) {
+            if (res.statusCode === 404) { //if no room found
+              clearInterval(nowPlayingInterval) //then clear the interval
+            }
           })
         }, count);
 
-        //clearInterval(nowPlayingInterval);
 
         // we can also pass the token to the browser to make requests from there
         res.redirect(client_uri + '/room#' +
