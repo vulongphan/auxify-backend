@@ -146,23 +146,21 @@ app.get('/callback', function (req, res) {
           else console.log(res.body);
         })
 
-        //set up interval for getNowPlaying
-        const count = 2000;
-
         //here we continue calling this function (keep sending POST request) so that we can keep making the router call getnowPlaying() function
         //also note that we also check when to play the next song in getnowPlaying()  
         const nowPlayingInterval = setInterval(function () {
           //make get request to check when the room is not found then clear the interval
           request.get(server_uri + '/room/' + room_id, function (err, res) {
             if (res.statusCode === 404) { //if no room found
-              clearInterval(nowPlayingInterval) //then clear the interval
+              clearInterval(nowPlayingInterval); //then clear the interval
             }
-            else{
+            else {
+              //set up interval for getNowPlaying
+              const count = 2000;
               var intervalOptions = {
                 url: server_uri + '/api/nowPlaying/' + room_id,
                 body: {
                   count: count,
-                  room: res.data.data
                 },
                 headers: { 'Content-Type': 'application/json' },
                 json: true,
