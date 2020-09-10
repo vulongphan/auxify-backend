@@ -188,81 +188,74 @@ updateHost = async (req, res) => {
 getNowPlaying = (req, res) => {
     const room_id = req.params.id;
     const count = req.body.count;
+    const room = req.body.room;
 
-    Room.findOne({ id: room_id }, (err, room) => {
-        // play the next song
-        function play(room) {
-            var options;
-            //play the next song in the queue
-            if (room.queue.length > 0) {
-                options = {
-                    uris: [room.queue[0].uri],
-                };
-                s.play(options)
-                    .then(async function () {
-                        await Room.updateOne({ id: room_id }, { $pop: { queue: -1 } }) //remove the next song from the queue after being played
-                    })
-                    .catch(err => console.log(err));
-            }
-            //if queue is empty, play from default playlist;
-            else if (room.default_playlist) {
-                var position = Math.floor(Math.random() * room.default_playlist.tracks.total)
-                options = {
-                    context_uri: room.default_playlist.uri,
-                    offset: {
-                        position: position
-                    }
+    function play(room) {
+        var options;
+        //play the next song in the queue
+        if (room.queue.length > 0) {
+            options = {
+                uris: [room.queue[0].uri],
+            };
+            s.play(options)
+                .then(async function () {
+                    await Room.updateOne({ id: room_id }, { $pop: { queue: -1 } }) //remove the next song from the queue after being played
+                })
+                .catch(err => console.log(err));
+        }
+        //if queue is empty, play from default playlist;
+        else if (room.default_playlist) {
+            var position = Math.floor(Math.random() * room.default_playlist.tracks.total)
+            options = {
+                context_uri: room.default_playlist.uri,
+                offset: {
+                    position: position
                 }
-                s.play(options)
-                    .catch(err => console.log(err));
             }
+            s.play(options)
+                .catch(err => console.log(err));
         }
+    }
 
-        //getNowPlaying
-        if (!err && room) {
-            var s = new SpotifyWebApi();
-            s.setAccessToken(room.access_token);
-            s.getMyCurrentPlaybackState({
-            })
-                .then(function (data) {
-                    const body = data.body;
-                    const nowPlaying = {
-                        playing: true,
-                        currentPosition: body.progress_ms,
-                        name: body.item.name,
-                        albumArt: body.item.album.images[0].url,
-                        artists: body.item.artists,
-                        duration: body.item.duration_ms,
-                    }
-                    Room.updateOne({ id: room_id }, { nowPlaying: nowPlaying }, (err) => {
-                        if (err) return res.status(400).json(err);
-                        else return res.status(200).json({ success: true, data: nowPlaying });
-                    })
-                    //check if song is about to end, and play next song
-                    const left = nowPlaying.duration - nowPlaying.currentPosition;
-                    if (nowPlaying.playing && left <= count) {
-                        play(room);
-                    }
-                }, function (error) {
-                    const nowPlaying = {
-                        playing: false,
-                        currentPosition: 0,
-                        name: null,
-                        albumArt: null,
-                        artists: null,
-                        duration: 0,
-                    }
-                    Room.updateOne({ id: room_id }, { nowPlaying: nowPlaying }, (err) => {
-                        if (err) return res.status(400).json(err);
-                        else return res.status(200).json({ success: true, error: error });
-                    })
-                });
-        }
-        else if (err) return res.status(404).json({ err });
-        else return res.status(400).json({ error: "No room found with the given id" })
+    //getNowPlaying
+    var s = new SpotifyWebApi();
+    s.setAccessToken(room.access_token);
+    s.getMyCurrentPlaybackState({
     })
+        .then(function (data) {
+            const body = data.body;
+            const nowPlaying = {
+                playing: true,
+                currentPosition: body.progress_ms,
+                name: body.item.name,
+                albumArt: body.item.album.images[0].url,
+                artists: body.item.artists,
+                duration: body.item.duration_ms,
+            }
+            Room.updateOne({ id: room_id }, { nowPlaying: nowPlaying }, (err) => {
+                if (err) return res.status(400).json(err);
+                else return res.status(200).json({ success: true, data: nowPlaying });
+            })
+            //check if song is about to end, and play next song
+            const left = nowPlaying.duration - nowPlaying.currentPosition;
+            if (nowPlaying.playing && left <= count) {
+                play(room);
+            }
+        }, function (error) {
+            const nowPlaying = {
+                playing: false,
+                currentPosition: 0,
+                name: null,
+                albumArt: null,
+                artists: null,
+                duration: 0,
+            }
+            Room.updateOne({ id: room_id }, { nowPlaying: nowPlaying }, (err) => {
+                if (err) return res.status(400).json(err);
+                else return res.status(200).json({ success: true, error: error });
+            })
+        });
 }
-
 
 module.exports = {
     addRoom,
