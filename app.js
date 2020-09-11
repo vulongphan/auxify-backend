@@ -165,7 +165,7 @@ app.get('/callback', function (req, res) {
             else console.log(res.body);
           });
           //make get request to check when the room is not found then clear the interval
-          request.get(server_uri + '/room/' + room_id, function (err, res, body) {
+          request.get(server_uri + '/api/room/' + room_id, function (err, res, body) {
             if (res.statusCode === 404) { //if no room found
               clearInterval(nowPlayingInterval) //then clear the interval
             }
