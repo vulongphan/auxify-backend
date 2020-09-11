@@ -146,29 +146,28 @@ app.get('/callback', function (req, res) {
           else console.log(res.body);
         })
 
+        //set up interval for getNowPlaying
+        const count = 2000;
+        var intervalOptions = {
+          url: server_uri + '/api/nowPlaying/' + room_id,
+          body: {
+            count: count,
+          },
+          headers: { 'Content-Type': 'application/json' },
+          json: true,
+        }
+
         //here we continue calling this function (keep sending POST request) so that we can keep making the router call getnowPlaying() function
         //also note that we also check when to play the next song in getnowPlaying()  
         const nowPlayingInterval = setInterval(function () {
+          request.post(intervalOptions, function (err, res) {
+            if (error) console.log(err);
+            else console.log(res.body);
+          });
           //make get request to check when the room is not found then clear the interval
-          request.get(server_uri + '/room/' + room_id, function (err, res) {
+          request.get(server_uri + 'api/room/' + room_id, function (err, res, body) {
             if (res.statusCode === 404) { //if no room found
-              clearInterval(nowPlayingInterval); //then clear the interval
-            }
-            else {
-              //set up interval for getNowPlaying
-              const count = 2000;
-              var intervalOptions = {
-                url: server_uri + '/api/nowPlaying/' + room_id,
-                body: {
-                  count: count,
-                },
-                headers: { 'Content-Type': 'application/json' },
-                json: true,
-              }
-              request.post(intervalOptions, function (err, res) {
-                if (error) console.log(err);
-                else console.log(res.body);
-              });
+              clearInterval(nowPlayingInterval) //then clear the interval
             }
           })
         }, count);
@@ -189,32 +188,6 @@ app.get('/callback', function (req, res) {
     });
   }
 });
-
-/*
-app.get('/refresh_token', function (req, res) {
-
-  // requesting access token from refresh token
-  var refresh_token = req.query.refresh_token;
-  var authOptions = {
-    url: 'https://accounts.spotify.com/api/token',
-    headers: { 'Authorization': 'Basic ' + (new Buffer(client_id + ':' + client_secret).toString('base64')) },
-    form: {
-      grant_type: 'refresh_token',
-      refresh_token: refresh_token
-    },
-    json: true
-  };
-
-  request.post(authOptions, function (error, response, body) {
-    if (!error && response.statusCode === 200) {
-      var access_token = body.access_token;
-      res.send({
-        'access_token': access_token
-      });
-    }
-  });
-});
-*/
 
 app.use('/api', auxifyRouter);
 
