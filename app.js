@@ -45,12 +45,6 @@ var stateKey = 'spotify_auth_state';
 
 var app = express();
 
-var access_token = null;
-var refresh_token = null;
-var room_id = null;
-var current_time = null;
-var duration = 3600 * 1000; //the duration in which the access_token will expire (in mili sec)
-
 db.on('error', console.error.bind(console, 'MongoDB connection error:'));
 
 app.use(express.static(__dirname + '/public'))
@@ -108,8 +102,9 @@ app.get('/callback', function (req, res) {
     request.post(authOptions, function (error, response, body) {
       if (!error && response.statusCode === 200) {
 
-        access_token = body.access_token,
-          refresh_token = body.refresh_token;
+        var access_token = body.access_token;
+        var refresh_token = body.refresh_token;
+        var duration = 3600 * 1000; //the duration in which the access_token will expire (in mili sec)
 
         var options = {
           url: 'https://api.spotify.com/v1/me',
@@ -122,9 +117,7 @@ app.get('/callback', function (req, res) {
           console.log(body);
         });
 
-        room_id = generateRandomString(4);
-        current_time = Date.now(); //in mili sec
-
+        var room_id = generateRandomString(4);
         var auxifyOptions = {
           url: server_uri + '/api/room',
           body: {
@@ -133,13 +126,11 @@ app.get('/callback', function (req, res) {
             refresh_token: refresh_token,
             queue: [],
             default_playlist: "",
-            end_time: current_time + duration,
-
+            end_time: Date.now() + duration,
           },
           headers: { 'Content-Type': 'application/json' },
           json: true,
         }
-
 
         request.post(auxifyOptions, function (err, res) {
           if (error) console.log(err);
@@ -165,7 +156,7 @@ app.get('/callback', function (req, res) {
             else console.log(res.body);
           });
           //make get request to check when the room is not found then clear the interval
-          request.get(server_uri + 'api/room/' + room_id, function (err, res, body) {
+          request.get(server_uri + '/api/room/' + room_id, function (err, res, body) {
             if (res.statusCode === 404) { //if no room found
               clearInterval(nowPlayingInterval) //then clear the interval
             }

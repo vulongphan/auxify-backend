@@ -66,7 +66,19 @@ addToQueue = (req, res) => {
                 if (!room && !err) return res.status(400).json({ error: "No room found with given id" });
                 else if (err) return res.status(404).json({ err });
                 else { //if there is a room found with a given id
-                    Room.updateOne({ id: room_id }, { $push: { queue: song } },
+                    var queue = room.queue;
+                    queue.push(song);
+                    var i = queue.length - 1;
+                    const swap = (arr, i, j) => {
+                        const temp = arr[i];
+                        arr[i] = arr[j];
+                        arr[j] = temp;
+                    }
+                    while (i >= 1 && queue[i - 1].vote < 0){
+                        i--;
+                        swap(queue, i, i+1);
+                    }
+                    Room.updateOne({ id: room_id }, { queue: queue },
                         (err) => {
                             if (err) return res.status(404).json({ err });
                             else return res.status(200).json({ success: true });
@@ -239,8 +251,7 @@ getNowPlaying = (req, res) => {
                         else return res.status(200).json({ success: true, data: nowPlaying });
                     })
                     //check if song is about to end, and play next song
-                    const left = nowPlaying.duration - nowPlaying.currentPosition;
-                    if (nowPlaying.playing && left <= count) {
+                    if (nowPlaying.playing && nowPlaying.currentPosition === 0) {
                         play(room);
                     }
                 }, function (error) {
