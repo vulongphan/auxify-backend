@@ -218,15 +218,19 @@ getNowPlaying = (req, res) => {
             }
             //if queue is empty, play from default playlist;
             else if (room.default_playlist) {
-                var position = Math.floor(Math.random() * room.default_playlist.tracks.total)
-                options = {
-                    context_uri: room.default_playlist.uri,
-                    offset: {
-                        position: position
-                    }
-                }
-                s.play(options)
+                console.log("Here");
+                s.getPlaylist(room.default_playlist.id)
+                .then(res => {
+                    const playlist = res.body.tracks.items;
+                    var position = Math.floor(Math.random() * playlist.length);
+                    //console.log(position);
+                    var nextSongURI = playlist[position].track.uri;
+                    options = {
+                        uris: [nextSongURI],
+                    };
+                    s.play(options)
                     .catch(err => console.log(err));
+                });
             }
         }
 
