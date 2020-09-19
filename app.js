@@ -114,7 +114,7 @@ app.get('/callback', function (req, res) {
 
         // use the access token to access the Spotify Web API
         request.get(options, function (error, response, body) {
-          console.log(body);
+          // console.log(body);
         });
 
         var room_id = generateRandomString(4);

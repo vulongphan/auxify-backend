@@ -238,6 +238,8 @@ getNowPlaying = (req, res) => {
         if (!err && room) {
             var s = new SpotifyWebApi();
             s.setAccessToken(room.access_token);
+            var start_time = new Date().getTime(); //when the request (getmycurrentplaybackstate) starts to be queued
+            var count = 2000; //getMyCurrentPlaybackState() is called every 2 secs and the function should return in less than 2 secs
             s.getMyCurrentPlaybackState({
             })
                 .then(function (data) {
@@ -254,9 +256,11 @@ getNowPlaying = (req, res) => {
                         if (err) return res.status(400).json(err);
                         else return res.status(200).json({ success: true, data: nowPlaying });
                     })
+                    var time_pass = new Date().getTime() - start_time; //an upper boundary of the time taken by the API to return response
+                    console.log("time passed: " + time_pass );
                     //check if song is about to end, and play next song
-                    if (nowPlaying.playing && nowPlaying.currentPosition === 0) {
-                        play(room);
+                    if (nowPlaying.playing && nowPlaying.currentPosition === 0 && time_pass < count) {
+                        play(room); //only call play() if getMyCurrentPlaybackState returns in less than 2 secs
                     }
                 }, function (error) {
                     const nowPlaying = {
