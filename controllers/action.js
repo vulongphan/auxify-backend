@@ -258,7 +258,7 @@ getNowPlaying = (req, res) => {
                     var time_pass = new Date().getTime() - start_time; //an upper boundary of the time taken by the API to return response
                     console.log("time passed: " + time_pass );
                     //check if song is about to end, and play next song
-                    var limit = count/2;
+                    var limit = count/4;
                     if (nowPlaying.playing && nowPlaying.currentPosition === 0 && time_pass < limit) {
                         play(room); //this call must return before the next getMyCurrentPlaybackState request is sent
                     }
