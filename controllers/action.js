@@ -200,6 +200,7 @@ updateHost = async (req, res) => {
 getNowPlaying = (req, res) => {
     const room_id = req.params.id;
     const count = req.body.count;
+    var start_time = new Date().getTime(); //when the request (getmycurrentplaybackstate) starts to be queued
 
     Room.findOne({ id: room_id }, (err, room) => {
         // play the next song
@@ -238,8 +239,6 @@ getNowPlaying = (req, res) => {
         if (!err && room) {
             var s = new SpotifyWebApi();
             s.setAccessToken(room.access_token);
-            var start_time = new Date().getTime(); //when the request (getmycurrentplaybackstate) starts to be queued
-            var count = 2000; //getMyCurrentPlaybackState() is called every 2 secs and the function should return in less than 2 secs
             s.getMyCurrentPlaybackState({
             })
                 .then(function (data) {
