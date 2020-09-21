@@ -199,8 +199,7 @@ updateHost = async (req, res) => {
 
 getNowPlaying = (req, res) => {
     const room_id = req.params.id;
-    const count = req.body.count;
-    var start_time = new Date().getTime(); //when the request (getmycurrentplaybackstate) starts to be queued
+    //const count = req.body.count;
 
     Room.findOne({ id: room_id }, (err, room) => {
         // play the next song
@@ -255,11 +254,7 @@ getNowPlaying = (req, res) => {
                         if (err) return res.status(400).json(err);
                         else return res.status(200).json({ success: true, data: nowPlaying });
                     })
-                    var time_pass = new Date().getTime() - start_time; //an upper boundary of the time taken by the API to return response
-                    console.log("time passed: " + time_pass );
-                    //check if song is about to end, and play next song
-                    var limit = count/10;
-                    if (nowPlaying.playing && nowPlaying.currentPosition === 0 && time_pass < limit) {
+                    if (nowPlaying.playing && nowPlaying.currentPosition === 0) {
                         play(room); //this call must return before the next getMyCurrentPlaybackState request is sent
                     }
                 }, function (error) {
