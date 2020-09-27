@@ -273,7 +273,7 @@ getNowPlaying = (req, res) => {
                         //wait until play() finishes
                         if (nowPlaying.playing && nowPlaying.currentPosition === 0) {
                             play(room).then(() => {
-                                return res.status(200).json({ message: "next song is played" })
+                                return res.status(200).json({ message: "next song is played", play: true })
                             });
                         }
                         else {

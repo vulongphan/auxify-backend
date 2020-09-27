@@ -175,8 +175,10 @@ app.get('/callback', function (req, res) {
             console.log("--------------------------------------------------");
             doRequest(intervalOptions).then(res => { //wait for the Promise in doRequest() to be resolved, which means getNowPlaying has returned
               // var elapsed_time = new Date().getTime() - start_time;
-              console.log(res.body);
               if (res.statusCode === 200) { //call itself again only if the server responds with statusCode 200 (this means the request is received and the room still exists)
+                console.log(res.body);
+                if (res.body.play === true) count = 3000;
+                else count = 2000;
                 console.log("getNowPlaying() at backend is called at: " + new Date().getHours() + ":" + new Date().getMinutes() + ":" + new Date().getSeconds());
                 console.log("--------------------------------------------------" + "\n" + "\n" + "\n");
                 getNowPlaying(count)
