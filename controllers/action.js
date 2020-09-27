@@ -202,9 +202,6 @@ getNowPlaying = (req, res) => {
     //get the room_id from request params
     const room_id = req.params.id;
 
-    //get the count from the request body
-    const count = req.body.count;
-
     //the function finds the document in the collection "rooms" in MongoDB database with the given room id
     Room.findOne({ id: room_id }, (err, room) => {
 

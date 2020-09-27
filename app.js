@@ -132,9 +132,6 @@ app.get('/callback', function (req, res) {
         const count = 2000;
         var intervalOptions = {
           url: server_uri + '/api/nowPlaying/' + room_id,
-          body: {
-            count: count,
-          },
           headers: { 'Content-Type': 'application/json' },
           json: true,
         }
