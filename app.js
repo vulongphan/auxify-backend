@@ -21,9 +21,9 @@ const auxifyRouter = require('./routes/router');
 
 var client_id = '98c53852256e4816afb8a2c86d95e913'; // Long's client id
 var client_secret = 'd3cd3fae251f4eceb4751c6cd82c984d'; // Long's client secret
-var server_uri = 'http://localhost:8888';
+var server_uri = 'https://auxify-backend.herokuapp.com';
 var redirect_uri = server_uri + '/callback'; // Redirect uri
-var client_uri = 'http://localhost:3000';
+var client_uri = 'https://auxify.herokuapp.com';
 
 /**
  * Generates a random string containing numbers and letters
