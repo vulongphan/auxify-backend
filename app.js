@@ -16,8 +16,8 @@ var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 // var SpotifyPlaybackSDK = require('spotify-sdk');
 
-const db = require('../data/index.js');
-const auxifyRouter = require('../routes/router');
+const db = require('./data/index.js');
+const auxifyRouter = require('./routes/router');
 
 var client_id = '98c53852256e4816afb8a2c86d95e913'; // Long's client id
 var client_secret = 'd3cd3fae251f4eceb4751c6cd82c984d'; // Long's client secret
