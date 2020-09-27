@@ -74,9 +74,9 @@ addToQueue = (req, res) => {
                         arr[i] = arr[j];
                         arr[j] = temp;
                     }
-                    while (i >= 1 && queue[i - 1].vote < 0){
+                    while (i >= 1 && queue[i - 1].vote < 0) {
                         i--;
-                        swap(queue, i, i+1);
+                        swap(queue, i, i + 1);
                     }
                     Room.updateOne({ id: room_id }, { queue: queue },
                         (err) => {
@@ -197,72 +197,98 @@ updateHost = async (req, res) => {
     })
 }
 
+//this function is called every 2 secs
 getNowPlaying = (req, res) => {
+    //get the room_id from request params
     const room_id = req.params.id;
-    const count = req.body.count;
-    var start_time = new Date().getTime(); //when the request (getmycurrentplaybackstate) starts to be queued
 
+    //get the count from the request body
+    const count = req.body.count;
+
+    //the function finds the document in the collection "rooms" in MongoDB database with the given room id
     Room.findOne({ id: room_id }, (err, room) => {
-        // play the next song
-        function play(room) {
+
+        //define a function to play the next song 
+        async function play(room) {
             var options;
             //play the next song in the queue
             if (room.queue.length > 0) {
                 options = {
                     uris: [room.queue[0].uri],
                 };
-                s.play(options)
+                await s.play(options)
                     .then(async function () {
+                        console.log("play() from queue returns at: " + new Date().getHours() + ":" + new Date().getMinutes() + ":" + new Date().getSeconds())
                         await Room.updateOne({ id: room_id }, { $pop: { queue: -1 } }) //remove the next song from the queue after being played
                     })
                     .catch(err => console.log(err));
             }
             //if queue is empty, play from default playlist;
             else if (room.default_playlist) {
-                console.log("Here");
-                s.getPlaylist(room.default_playlist.id)
-                .then(res => {
-                    const playlist = res.body.tracks.items;
-                    var position = Math.floor(Math.random() * playlist.length);
-                    //console.log(position);
-                    var nextSongURI = playlist[position].track.uri;
-                    options = {
-                        uris: [nextSongURI],
-                    };
-                    s.play(options)
-                    .catch(err => console.log(err));
-                });
+                await s.getPlaylist(room.default_playlist.id)
+                    .then(async res => {
+                        const playlist = res.body.tracks.items;
+                        var position = Math.floor(Math.random() * playlist.length);
+                        var nextSongURI = playlist[position].track.uri;
+                        options = {
+                            uris: [nextSongURI],
+                        };
+                        await s.play(options).then(() => {
+                            console.log("play() from playlist returns at: " + new Date().getHours() + ":" + new Date().getMinutes() + ":" + new Date().getSeconds())
+                        })
+                            .catch(err => console.log(err));
+                    });
             }
         }
 
-        //getNowPlaying
+        //if the room is found
         if (!err && room) {
+            //initiate a SpotifyWebApi object
             var s = new SpotifyWebApi();
+
+            //pass the access token to the api
             s.setAccessToken(room.access_token);
+
+            //get the current playback state of the Spotify app
             s.getMyCurrentPlaybackState({
             })
-                .then(function (data) {
+                .then(function (data) { //until the Promise returns
+
                     const body = data.body;
-                    const nowPlaying = {
-                        playing: true,
-                        currentPosition: body.progress_ms,
-                        name: body.item.name,
-                        albumArt: body.item.album.images[0].url,
-                        artists: body.item.artists,
-                        duration: body.item.duration_ms,
+                    if (JSON.stringify(body) !== "{}") { //if no song has been played on Spotify
+                        // console.log(body);
+                        const nowPlaying = {
+                            playing: true,
+                            currentPosition: body.progress_ms,
+                            name: body.item.name,
+                            albumArt: body.item.album.images[0].url,
+                            artists: body.item.artists,
+                            duration: body.item.duration_ms,
+                        }
+
+                        //update the corresponding document/room in the collection with the nowPlaying object
+                        Room.updateOne({ id: room_id }, { nowPlaying: nowPlaying })
+                            .then(() => {
+                                console.log("Update NowPlaying successfully")
+                            })
+
+                        //check if song is about to end, and play next song
+                        //wait until play() finishes
+                        if (nowPlaying.playing && nowPlaying.currentPosition === 0) {
+                            play(room).then(() => {
+                                return res.status(200).json({ message: "next song is played" })
+                            });
+                        }
+                        else {
+                            return res.status(200).json({ message: "in current song" })
+                        }
+
                     }
-                    Room.updateOne({ id: room_id }, { nowPlaying: nowPlaying }, (err) => {
-                        if (err) return res.status(400).json(err);
-                        else return res.status(200).json({ success: true, data: nowPlaying });
-                    })
-                    var time_pass = new Date().getTime() - start_time; //an upper boundary of the time taken by the API to return response
-                    console.log("time passed: " + time_pass );
-                    //check if song is about to end, and play next song
-                    var limit = count/10;
-                    if (nowPlaying.playing && nowPlaying.currentPosition === 0 && time_pass < limit) {
-                        play(room); //this call must return before the next getMyCurrentPlaybackState request is sent
+                    else {
+                        return res.status(200).json({ message: "Please play a song on your Spotify app" })
                     }
-                }, function (error) {
+
+                }, function (error) { //if there is error in getting the current playback state
                     const nowPlaying = {
                         playing: false,
                         currentPosition: 0,
@@ -277,7 +303,9 @@ getNowPlaying = (req, res) => {
                     })
                 });
         }
-        else if (err) return res.status(404).json({ err });
+        else if (err) {
+            return res.status(404).json({ err });
+        }
         else return res.status(400).json({ error: "No room found with the given id" })
     })
 }
