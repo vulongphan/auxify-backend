@@ -175,17 +175,18 @@ app.get('/callback', function (req, res) {
             console.log("--------------------------------------------------");
             doRequest(intervalOptions).then(res => { //wait for the Promise in doRequest() to be resolved, which means getNowPlaying has returned
               // var elapsed_time = new Date().getTime() - start_time;
-              if (res.statusCode === 200) { //call itself again only if the server responds with statusCode 200 (this means the request is received and the room still exists)
+              if (res.body.is_room === false) { // if the room no longer exists
+                console.log("getNowPlaying at backend stops");
+              }
+              else{ //call itself again only if the room still exists, regardless of other errors
                 console.log(res.body);
-                if (res.body.play === true) count = 3000;
+                if (res.body.play === true) count = 3000; //if the current songs finishes, then wait for 3 secs until the next getNowPlaying call
                 else count = 2000;
                 console.log("getNowPlaying() at backend is called at: " + new Date().getHours() + ":" + new Date().getMinutes() + ":" + new Date().getSeconds());
                 console.log("--------------------------------------------------" + "\n" + "\n" + "\n");
                 getNowPlaying(count)
               }
-              else {
-                console.log("getNowPlaying at backend stops");
-              }
+              
             })
               .catch((error) => console.log(error))
           }, count)

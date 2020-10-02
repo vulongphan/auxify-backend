@@ -273,7 +273,7 @@ getNowPlaying = (req, res) => {
                         //wait until play() finishes
                         if (nowPlaying.playing && nowPlaying.currentPosition === 0) {
                             play(room).then(() => {
-                                return res.status(200).json({ message: "next song is played", play: true })
+                                return res.status(200).json({ message: "next song is played or Spotify paused", play: true })
                             });
                         }
                         else {
@@ -303,7 +303,7 @@ getNowPlaying = (req, res) => {
         else if (err) {
             return res.status(404).json({ err });
         }
-        else return res.status(400).json({ error: "No room found with the given id" })
+        else return res.status(400).json({ error: "No room found with the given id" , is_room: false})
     })
 }
 
