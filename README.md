@@ -1,6 +1,6 @@
 1. Trong này t dùng client secret và client id của t nhé
 
-2. MongoDB database của mình đc host ở mongodb://3.128.218.1:27017/auxifyDB, để truy cập c lên command prompt run 'mongo 3.128.218.1/auxifyDB' rồi lại run command 'db.rooms.find()' sẽ thấy các rooms của mình nhé. Ban đầu locally thì địa chỉ database của mình là mongodb://127.0.0.1:27017/auxifyDB.
+2. MongoDB database của mình đc host ở mongodb://3.128.218.1:27017/auxifyDB, để truy cập c lên command prompt run 'mongo 3.138.48.80/auxifyDB' rồi lại run command 'db.rooms.find()' sẽ thấy các rooms của mình nhé. Ban đầu locally thì truy cập địa chỉ database của mình là mongo 127.0.0.1:27017/auxifyDB
 3. Để thay đổi expire time của collection rooms của mình, thì mình truy cập vào db của mình (mongo 127.0.0.1:27017/auxifyDB) trên và sau đó gõ command này db.runCommand( { "collMod":"rooms", "index": { "name": "createdAt_1", "expireAfterSeconds": 10, } } ). Cái value của field "expireAfterSeconds" là tuỳ mình set nhé
 4. To view all the indexes of a collection, run db.rooms.getIndexes()
 to delete all documents, run db.rooms.remove({})
