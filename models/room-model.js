@@ -33,7 +33,7 @@ const Room = new Schema(
         count: { type: Number },
         //add a new attribute in order to determine the host at front end
         host_known: {type: Boolean, required: true, default: true},
-        createdAt: { type: Date, expire:14400, default: Date.now},
+        createdAt: { type: Date, default: Date.now},
         end_time: {type: Number, required: true}
     },
 )
