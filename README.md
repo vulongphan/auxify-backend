@@ -11,6 +11,9 @@ db.runCommand( { "collMod":"rooms", "index": { "name": "createdAt_1", "expireAft
 
 6. To set the expire time for the collection if the index is not yet there, run this command `db.rooms.ensureIndex( { "createdAt": 1 }, { expireAfterSeconds: 14400 } )`
 
+7. Some stuff that may save some work load
+
+ssh -i auxify_db.pem ec2-user@3.131.26.14 in AuxifyLocal
 
 [mongodb-org-3.4]
 name=MongoDB Repository
