@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
-
+const atlas = "mongodb+srv://vulongphan:Arsenal1205@auxifydb.7hwxx.mongodb.net/auxifyDB?retryWrites=true&w=majority";
 mongoose
-    .connect('mongodb://3.131.26.14:27017/auxifyDB', { useNewUrlParser: true }) //change from local 127.0.0.1 to www 3.128.218.1
+    .connect(atlas, { useNewUrlParser: true })
     .catch(e => {
         console.error('Connection error', e.message)
     })
