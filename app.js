@@ -1,28 +1,19 @@
-/**
- * This is an example of a basic node.js script that performs
- * the Authorization Code oAuth2 flow to authenticate against
- * the Spotify Accounts.
- *
- * For more information, read
- * https://developer.spotify.com/web-api/authorization-guide/#authorization_code_flow
- */
-
 var PORT = process.env.PORT || 8888;
-var express = require('express'); // Express web server framework
-var request = require('request'); // "Request" library
+
+//include all neccessary modules
+var express = require('express'); 
+var request = require('request'); 
 var cors = require('cors');
 var querystring = require('querystring');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
-// var SpotifyPlaybackSDK = require('spotify-sdk');
-
 const db = require('./data/index.js');
 const auxifyRouter = require('./routes/router');
 
-var client_id = '98c53852256e4816afb8a2c86d95e913'; // Long's client id
-var client_secret = 'd3cd3fae251f4eceb4751c6cd82c984d'; // Long's client secret
+var client_id = '98c53852256e4816afb8a2c86d95e913'; 
+var client_secret = 'd3cd3fae251f4eceb4751c6cd82c984d'; 
 var server_uri = 'https://auxify-backend.herokuapp.com';
-var redirect_uri = server_uri + '/callback'; // Redirect uri
+var redirect_uri = server_uri + '/callback'; 
 var client_uri = 'https://auxify.herokuapp.com';
 
 /**
@@ -41,9 +32,7 @@ var generateRandomString = function (length) {
 };
 
 var stateKey = 'spotify_auth_state';
-
 var app = express();
-
 db.on('error', console.error.bind(console, 'MongoDB connection error:'));
 
 
@@ -55,7 +44,6 @@ app.use(express.static(__dirname + '/public'))
 
 
 app.get('/login', function (req, res) {
-
   var state = generateRandomString(16);
   res.cookie(stateKey, state);
 
@@ -136,28 +124,6 @@ app.get('/callback', function (req, res) {
           json: true,
         }
 
-        //here we continue calling this function (keep sending POST request) so that we can keep making the router call getnowPlaying() function
-        //also note that we also check when to play the next song in getnowPlaying()  
-
-        //how to fix the play() being called several times: we will schedule the api call only when the previous call has returned
-        /*use setInterval()
-        const nowPlayingInterval = setInterval(function () {
-          request.post(intervalOptions, function (err, res) {
-            if (err) console.log(err);
-            else console.log(res.body);
-          });
-          //make get request to check when the room is not found then clear the interval
-          request.get(server_uri + '/api/room/' + room_id, function (err, res, body) {
-            if (res.statusCode === 404) { //if no room found
-              clearInterval(nowPlayingInterval) //then clear the interval
-            }
-          })
-        }, count);
-      
-        */
-
-        /*use setTimeout()
-        */
         function doRequest(options) {
           return new Promise(function (resolve, reject) { 
             request.post(options, function (error, response, body) {
