@@ -1,7 +1,8 @@
 const mongoose = require('mongoose');
-const atlas = "mongodb+srv://vulongphan:Arsenal1205@auxifydb.7hwxx.mongodb.net/auxifyDB?retryWrites=true&w=majority";
+const {database_url} = require('../config');
 mongoose
-    .connect(atlas, { useNewUrlParser: true })
+    .connect(database_url, { useNewUrlParser: true })
+    .then(console.log("MongoDB connected"))
     .catch(e => {
         console.error('Connection error', e.message)
     })
