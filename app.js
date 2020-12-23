@@ -7,23 +7,24 @@
  * https://developer.spotify.com/web-api/authorization-guide/#authorization_code_flow
  */
 
-var PORT = process.env.PORT || 8888;
 var express = require('express'); // Express web server framework
 var request = require('request'); // "Request" library
 var cors = require('cors');
 var querystring = require('querystring');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
-// var SpotifyPlaybackSDK = require('spotify-sdk');
 
 const db = require('./data/index.js');
 const auxifyRouter = require('./routes/router');
 
-var client_id = '98c53852256e4816afb8a2c86d95e913'; // Long's client id
-var client_secret = 'd3cd3fae251f4eceb4751c6cd82c984d'; // Long's client secret
-var server_uri = 'https://auxify-backend.herokuapp.com';
-var redirect_uri = server_uri + '/callback'; // Redirect uri
-var client_uri = 'https://auxify.herokuapp.com';
+// var client_id = '98c53852256e4816afb8a2c86d95e913'; // Long's client id
+// var client_secret = 'd3cd3fae251f4eceb4751c6cd82c984d'; // Long's client secret
+// var server_uri = 'https://auxify-backend.herokuapp.com';
+// var redirect_uri = server_uri + '/callback'; // Redirect uri
+// var client_uri = 'https://auxify.herokuapp.com';
+
+const {port, server_url, client_url, spotify_id, spotify_secret} = require('./config');
+const redirect_url = server_url + '/callback'; 
 
 /**
  * Generates a random string containing numbers and letters
@@ -64,9 +65,9 @@ app.get('/login', function (req, res) {
   res.redirect('https://accounts.spotify.com/authorize?' +
     querystring.stringify({
       response_type: 'code',
-      client_id: client_id,
+      client_id: spotify_id,
       scope: scope,
-      redirect_uri: redirect_uri,
+      redirect_uri: redirect_url,
       state: state
     }));
 });
@@ -91,11 +92,11 @@ app.get('/callback', function (req, res) {
       url: 'https://accounts.spotify.com/api/token',
       form: {
         code: code,
-        redirect_uri: redirect_uri,
+        redirect_uri: redirect_url,
         grant_type: 'authorization_code'
       },
       headers: {
-        'Authorization': 'Basic ' + (new Buffer(client_id + ':' + client_secret).toString('base64'))
+        'Authorization': 'Basic ' + (new Buffer(spotify_id + ':' + spotify_secret).toString('base64'))
       },
       json: true
     };
@@ -109,7 +110,7 @@ app.get('/callback', function (req, res) {
 
         var room_id = generateRandomString(4);
         var auxifyOptions = {
-          url: server_uri + '/api/room',
+          url: server_url + '/api/room',
           body: {
             id: room_id,
             access_token: access_token,
@@ -131,7 +132,7 @@ app.get('/callback', function (req, res) {
         //set up interval for getNowPlaying
         const count = 2000;
         var intervalOptions = {
-          url: server_uri + '/api/nowPlaying/' + room_id,
+          url: server_url + '/api/nowPlaying/' + room_id,
           headers: { 'Content-Type': 'application/json' },
           json: true,
         }
@@ -195,7 +196,7 @@ app.get('/callback', function (req, res) {
         getNowPlaying(count); //call this function recursively
 
         // we can also pass the token to the browser to make requests from there
-        res.redirect(client_uri + '/room#' +
+        res.redirect(client_url + '/room#' +
           querystring.stringify({
             room_id: room_id,
           }));
@@ -212,4 +213,4 @@ app.get('/callback', function (req, res) {
 
 app.use('/api', auxifyRouter);
 
-app.listen(PORT);
+app.listen(port);
