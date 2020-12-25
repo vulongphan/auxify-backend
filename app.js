@@ -34,6 +34,47 @@ var generateRandomString = function (length) {
   return text;
 };
 
+/**
+ * 
+ * @param {*} options 
+ */
+var doRequest = function (options) {
+  return new Promise(function (resolve, reject) { 
+    request.post(options, function (error, response, body) {
+      if (!error) {
+        resolve(response);
+      }
+      else reject(error)
+    });
+  });
+}
+
+/**
+ * a recursive function to update what is currently being played
+ * @param {number} count: the time after which getNowPlaying is called again (recursively) if the room still exists 
+ * @param {*} options: options to post
+ */
+var getNowPlaying = function (count, options) {
+  // setTimeout calls getNowPlaying again after count seconds
+  setTimeout(function () {
+    console.log("--------------------------------------------------");
+    doRequest(options).then(res => { //wait for the Promise in doRequest() to be resolved, which means getNowPlaying has returned
+      if (!res.body.is_room) { // if the room no longer exists
+        console.log("getNowPlaying at backend stops");
+      }
+      else{ //call itself again only if the room still exists, stops when the room no longer exists
+        console.log(res.body);
+        if (res.body.play) count = 3000; //if the current songs finishes, then wait for 3 secs until the next getNowPlaying call
+        else count = 2000;
+        console.log("getNowPlaying() at backend is called at: " + new Date().getHours() + ":" + new Date().getMinutes() + ":" + new Date().getSeconds());
+        console.log("--------------------------------------------------" + "\n" + "\n" + "\n");
+        getNowPlaying(count, options)
+      }
+    })
+      .catch((error) => console.log(error))
+  }, count)
+}
+
 var stateKey = 'spotify_auth_state';
 var app = express();
 db.on('error', console.error.bind(console, 'MongoDB connection error:'));
@@ -127,41 +168,7 @@ app.get('/callback', function (req, res) {
           json: true,
         }
 
-        function doRequest(options) {
-          return new Promise(function (resolve, reject) { 
-            request.post(options, function (error, response, body) {
-              if (!error) {
-                resolve(response);
-              }
-              else reject(error)
-            });
-          });
-        }
-
-        function getNowPlaying(count) {
-          setTimeout(function () {
-            // var start_time = new Date().getTime();
-            console.log("--------------------------------------------------");
-            doRequest(intervalOptions).then(res => { //wait for the Promise in doRequest() to be resolved, which means getNowPlaying has returned
-              // var elapsed_time = new Date().getTime() - start_time;
-              if (res.body.is_room === false) { // if the room no longer exists
-                console.log("getNowPlaying at backend stops");
-              }
-              else{ //call itself again only if the room still exists, regardless of other errors
-                console.log(res.body);
-                if (res.body.play === true) count = 3000; //if the current songs finishes, then wait for 3 secs until the next getNowPlaying call
-                else count = 2000;
-                console.log("getNowPlaying() at backend is called at: " + new Date().getHours() + ":" + new Date().getMinutes() + ":" + new Date().getSeconds());
-                console.log("--------------------------------------------------" + "\n" + "\n" + "\n");
-                getNowPlaying(count)
-              }
-              
-            })
-              .catch((error) => console.log(error))
-          }, count)
-        }
-
-        getNowPlaying(count); //call this function recursively
+        getNowPlaying(count, intervalOptions); //call this function recursively
 
         // we can also pass the token to the browser to make requests from there
         res.redirect(client_url + '/room#' +
