@@ -7,13 +7,10 @@ var cors = require('cors');
 var querystring = require('querystring');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
-const {port, server_url, client_url, spotify_id, spotify_secret} = require('./config');
-const redirect_url = server_url + '/callback'; 
+var {port, server_url, client_url, spotify_id, spotify_secret} = require('./config');
+var db = require('./data/index.js');
+var auxifyRouter = require('./routes/router');
 
-const db = require('./data/index.js');
-const auxifyRouter = require('./routes/router');
-
-const {port, server_url, client_url, spotify_id, spotify_secret} = require('./config');
 const redirect_url = server_url + '/callback'; 
 
 /**
@@ -130,12 +127,14 @@ app.get('/callback', function (req, res) {
     request.post(authOptions, function (error, response, body) {
       if (!error && response.statusCode === 200) {
 
-        var access_token = body.access_token;
-        var refresh_token = body.refresh_token;
-        var duration = 3600 * 1000; //the duration in which the access_token will expire (in mili sec)
+        const access_token = body.access_token;
+        const refresh_token = body.refresh_token;
+        const duration = 3600 * 1000; //the duration in which the access_token will expire (in mili sec)
 
-        var room_id = generateRandomString(4);
-        var auxifyOptions = {
+        const room_id = generateRandomString(4);
+        const count = 2000; //the timeout before function getNowPlaying is being called again
+
+        const auxifyOptions = {
           url: server_url + '/api/room',
           body: {
             id: room_id,
@@ -156,7 +155,6 @@ app.get('/callback', function (req, res) {
         })
 
         //set up interval for getNowPlaying
-        const count = 2000;
         var intervalOptions = {
           url: server_url + '/api/nowPlaying/' + room_id,
           headers: { 'Content-Type': 'application/json' },
