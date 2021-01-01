@@ -17,12 +17,6 @@ var bodyParser = require('body-parser');
 const db = require('./data/index.js');
 const auxifyRouter = require('./routes/router');
 
-// var client_id = '98c53852256e4816afb8a2c86d95e913'; // Long's client id
-// var client_secret = 'd3cd3fae251f4eceb4751c6cd82c984d'; // Long's client secret
-// var server_uri = 'https://auxify-backend.herokuapp.com';
-// var redirect_uri = server_uri + '/callback'; // Redirect uri
-// var client_uri = 'https://auxify.herokuapp.com';
-
 const {port, server_url, client_url, spotify_id, spotify_secret} = require('./config');
 const redirect_url = server_url + '/callback'; 
 
@@ -47,9 +41,7 @@ var app = express();
 
 db.on('error', console.error.bind(console, 'MongoDB connection error:'));
 
-
-app.use(express.static(__dirname + '/public'))
-  .use(cors({ origin: true, credentials: true }))
+app.use(cors({ origin: true, credentials: true }))
   .use(cookieParser())
   .use(bodyParser.urlencoded({ extended: true }))
   .use(bodyParser.json())
