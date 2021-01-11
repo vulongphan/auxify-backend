@@ -317,7 +317,7 @@ getNowPlaying = (req, res) => {
                 });
         }
         else if (err) return res.status(404).json({ err });
-        else return res.status(400).json({ error: "No room found with the given id" , is_room: false})
+        else return res.status(500).json({ error: "No room found with the given id"})
     })
 }
 
