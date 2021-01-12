@@ -257,7 +257,6 @@ async function play(room,s) {
 }
 
 
-
 /**
  * POST: update getNowPlaying in the database every two seconds 
  */
