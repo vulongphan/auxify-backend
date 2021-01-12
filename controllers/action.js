@@ -224,7 +224,7 @@ updateHost = async (req, res) => {
  * Play a song, called when the previous song finishes playing
  * @param {*} room: object room contains room info
  */
-async function play(room) {
+async function play(room,s) {
     var options;
     //play the next song in the queue when the queue is not empty
     if (room.queue.length > 0) {
@@ -234,7 +234,7 @@ async function play(room) {
         await s.play(options)
             .then(async function () {
                 console.log("play() from queue returns at: " + new Date().getHours() + ":" + new Date().getMinutes() + ":" + new Date().getSeconds())
-                await Room.updateOne({ id: room_id }, { $pop: { queue: -1 } }) //remove the next song from the queue after being played
+                await Room.updateOne({ id: room.id }, { $pop: { queue: -1 } }) //remove the next song from the queue after being played
             })
             .catch(err => console.log(err));
     }
@@ -293,7 +293,7 @@ getNowPlaying = (req, res) => {
 
                         //check if song is about to end, and play next song
                         if (nowPlaying.playing && nowPlaying.currentPosition === 0) {
-                            play(room).then(() => {
+                            play(room,s).then(() => {
                                 return res.status(200).json({ message: "next song is played or Spotify paused", play: true })
                             });
                         }

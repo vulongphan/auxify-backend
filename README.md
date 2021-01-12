@@ -10,14 +10,3 @@ For your reference cách t deploy local mongodb lên world wide web: https://www
 db.runCommand( { "collMod":"rooms", "index": { "name": "createdAt_1", "expireAfterSeconds": 14400, } } ). Cái value của field "expireAfterSeconds" là tuỳ mình set nhé
 
 6. To set the expire time for the collection if the index is not yet there, run this command `db.rooms.ensureIndex( { "createdAt": 1 }, { expireAfterSeconds: 14400 } )`
-
-7. Some stuff that may save some work load
-
-ssh -i auxify_db.pem ec2-user@3.131.26.14 in AuxifyLocal
-
-[mongodb-org-3.4]
-name=MongoDB Repository
-baseurl=https://repo.mongodb.org/yum/amazon/2013.03/mongodb-org/3.4/x86_64/
-gpgcheck=1
-enabled=1
-gpgkey=https://www.mongodb.org/static/pgp/server-3.4.asc
