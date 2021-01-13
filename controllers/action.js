@@ -201,9 +201,9 @@ deleteRoom = (req, res) => {
 updateToken = (req, res) => {
     const room_id = req.params.id;
     const access_token = req.body.access_token;
-    const end_time = req.body.end_time;
+    // const end_time = req.body.end_time;
 
-    Room.updateOne({ id: room_id }, { access_token: access_token, end_time: end_time}, (err) => {
+    Room.updateOne({ id: room_id }, { access_token: access_token/*,end_time: end_time */}, (err) => {
         if (err) return res.status(400).json(err);
         else return res.status(200).json({ success: true })
     })
@@ -269,7 +269,7 @@ getNowPlaying = (req, res) => {
         if (!err && room) {
             var s = new SpotifyWebApi();
 
-            s.setAccessToken(room.access_token);
+            s.setAccessToken(room.access_token); // does getNowPlaying() emit a response if the access_token is not valid?
 
             //get the current playback state of the Spotify app
             s.getMyCurrentPlaybackState({})
@@ -320,6 +320,8 @@ getNowPlaying = (req, res) => {
         else return res.status(500).json({ error: "No room found with the given id"})
     })
 }
+
+
 
 
 module.exports = {
