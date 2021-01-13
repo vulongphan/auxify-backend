@@ -78,7 +78,6 @@ app.use(cors({ origin: true, credentials: true }))
   .use(bodyParser.urlencoded({ extended: true }))
   .use(bodyParser.json())
 
-
 app.get('/login', function (req, res) {
   var state = generateRandomString(16);
   res.cookie(stateKey, state);
