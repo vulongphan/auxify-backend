@@ -175,7 +175,7 @@ playDefault = (req, res) => {
 
     Room.findOne({ id: room_id }, (err, room) => {
         if (!err && room) {
-            Room.updateOne({ id: room_id }, { default_playlist: playlist }, (err, room) => {
+            Room.updateOne({ id: room_id }, { default_playlist: playlist }, (err) => {
                 if (err) return res.status(400).json(err);
                 else return res.status(200).json({ success: true })
             })
@@ -203,9 +203,14 @@ updateToken = (req, res) => {
     const access_token = req.body.access_token;
     // const end_time = req.body.end_time;
 
-    Room.updateOne({ id: room_id }, { access_token: access_token/*,end_time: end_time */}, (err) => {
+    // we have to do findOne first before update the document with updateOne
+    Room.updateOne({ id: room_id }, { access_token: access_token/*,end_time: end_time */}, (err, room) => { // updateOne does not seem to be able to report when no room found
         if (err) return res.status(400).json(err);
-        else return res.status(200).json({ success: true })
+        else if (!room) {
+            console.log("No room found with the given id");
+            return res.status(404).json({ error: "No room found with the given id" });
+        }
+        else return res.status(200).json({ success: true });
     })
 }
 
