@@ -204,14 +204,17 @@ updateToken = (req, res) => {
     // const end_time = req.body.end_time;
 
     // we have to do findOne first before update the document with updateOne
-    Room.updateOne({ id: room_id }, { access_token: access_token/*,end_time: end_time */}, (err, room) => { // updateOne does not seem to be able to report when no room found
-        if (err) return res.status(400).json(err);
-        else if (!room) {
-            console.log("No room found with the given id");
-            return res.status(404).json({ error: "No room found with the given id" });
+    Room.findOne({ id: room_id }, (err, room) => {
+        if (!err && room) { // if room exists
+            Room.updateOne({ id: room_id }, { access_token: access_token/*,end_time: end_time */ }, (err, room) => { // updateOne does not seem to be able to report when no room found
+                if (err) return res.status(400).json(err);
+                else return res.status(200).json({ success: true });
+            })
         }
-        else return res.status(200).json({ success: true });
+        else if (!room) return res.status(500).json({ error: "No room found with the given id"/*, room_exists: false*/});
+        else return res.status(404).json({ err });
     })
+
 }
 
 updateHost = async (req, res) => {
@@ -229,7 +232,7 @@ updateHost = async (req, res) => {
  * Play a song, called when the previous song finishes playing
  * @param {*} room: object room contains room info
  */
-async function play(room,s) {
+async function play(room, s) {
     var options;
     //play the next song in the queue when the queue is not empty
     if (room.queue.length > 0) {
@@ -280,7 +283,7 @@ getNowPlaying = (req, res) => {
             s.getMyCurrentPlaybackState({})
                 .then(function (data) { //until the Promise returns
                     const body = data.body;
-                    if (JSON.stringify(body) !== "{}") { //if no song has been played on Spotify
+                    if (JSON.stringify(body) !== "{}") { //if a song has been played on Spotify
                         const nowPlaying = {
                             playing: true,
                             currentPosition: body.progress_ms,
@@ -298,7 +301,7 @@ getNowPlaying = (req, res) => {
 
                         //check if song is about to end, and play next song
                         if (nowPlaying.playing && nowPlaying.currentPosition === 0) {
-                            play(room,s).then(() => {
+                            play(room, s).then(() => {
                                 return res.status(200).json({ message: "next song is played or Spotify paused", play: true })
                             });
                         }
@@ -322,7 +325,7 @@ getNowPlaying = (req, res) => {
                 });
         }
         else if (err) return res.status(404).json({ err });
-        else return res.status(500).json({ error: "No room found with the given id", is_room: false})
+        else return res.status(500).json({ error: "No room found with the given id", is_room: false })
     })
 }
 

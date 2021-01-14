@@ -93,12 +93,12 @@ var updateAccessToken = function (count, refresh_token, room_id) {
         json: true,
       }
       doRequest(tokenOptions).then(res => {
-        console.log("statusCode from /updateToken: ", res.statusCod);
+        console.log("statusCode from /updateToken: ", res.statusCode);
         if (res.statusCode === 200) {
-          count = 5000; // if updateToken successfully then call after 1 hr
+          count = 3600 * 1000; // if updateToken successfully then call after 1 hr
           console.log("updateToken successfully");
         }
-        else if (res.statusCode === 404) { // if no room found, terminate the recursive call
+        else if (res.statusCode === 500) { // if no room found, terminate the recursive call
           console.log(res.body.error);
           return;
         }
@@ -108,7 +108,9 @@ var updateAccessToken = function (count, refresh_token, room_id) {
         }
         updateAccessToken(count, refresh_token, room_id);
       })
+      .catch(error => console.log(error));
     })
+    .catch(error => console.log(error));
   }, count)
 }
 
@@ -206,7 +208,7 @@ app.get('/callback', function (req, res) {
 
         getNowPlaying(2000, intervalOptions); // call recursively after every 2 secs
 
-        updateAccessToken(5000, refresh_token, room_id); // call recursively after every 1 hr
+        updateAccessToken(3600 * 1000, refresh_token, room_id); // call recursively after every 1 hr
 
         // we can also pass the token to the browser to make requests from there
         res.redirect(client_url + '/room#' +
