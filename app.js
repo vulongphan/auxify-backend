@@ -53,7 +53,7 @@ var getNowPlaying = function (count, options) {
   setTimeout(function () {
     console.log("--------------------------------------------------");
     doRequest(options).then(res => { //wait for the Promise in doRequest() to be resolved, which means getNowPlaying has returned
-      if (res.statusCode === 500) { // if the room no longer exists
+      if (res.body.room_exists === false) { // if the room no longer exists
         console.log("getNowPlaying at backend stops");
       }
       else{ //call itself again only if the room still exists, stops when the room no longer exists
