@@ -1,17 +1,17 @@
 var PORT = process.env.PORT || 8888;
 
 //include all neccessary modules
-var express = require('express'); 
-var request = require('request'); 
+var express = require('express');
+var request = require('request');
 var cors = require('cors');
 var querystring = require('querystring');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
-var {port, server_url, client_url, spotify_id, spotify_secret} = require('./config');
+var { port, server_url, client_url, spotify_id, spotify_secret } = require('./config');
 var db = require('./data/index.js');
 var auxifyRouter = require('./routes/router');
 
-const redirect_url = server_url + '/callback'; 
+const redirect_url = server_url + '/callback';
 
 /**
  * Generates a random string containing numbers and letters
@@ -33,8 +33,8 @@ var generateRandomString = function (length) {
  * @param {*} options 
  */
 var doRequest = function (options) {
-  return new Promise(function (resolve, reject) { 
-    request.post(options, function (error, response, body) {
+  return new Promise(function (resolve, reject) {
+    request.post(options, function (error, response) {
       if (!error) {
         resolve(response);
       }
@@ -56,7 +56,7 @@ var getNowPlaying = function (count, options) {
       if (res.body.room_exists === false) { // if the room no longer exists
         console.log("getNowPlaying at backend stops");
       }
-      else{ //call itself again only if the room still exists, stops when the room no longer exists
+      else { //call itself again only if the room still exists, stops when the room no longer exists
         console.log(res.body);
         if (res.body.play) count = 3000; //if the current songs finishes, then wait for 3 secs until the next getNowPlaying call
         else count = 2000;
@@ -66,6 +66,51 @@ var getNowPlaying = function (count, options) {
       }
     })
       .catch((error) => console.log(error))
+  }, count)
+}
+
+var updateAccessToken = function (count, refresh_token, room_id) {
+  setTimeout(function () {
+    let authOptions = {
+      url: 'https://accounts.spotify.com/api/token',
+      headers: { 'Authorization': 'Basic ' + (new Buffer(spotify_id + ':' + spotify_secret).toString('base64')) },
+      form: {
+        grant_type: 'refresh_token',
+        refresh_token: refresh_token
+      },
+      json: true
+    };
+    doRequest(authOptions).then(res => {
+      let access_token = res.body.access_token;
+      console.log("New access_token: ", access_token);
+      let tokenOptions = {
+        url: server_url + '/api/updateToken/' + room_id,
+        body: {
+          access_token: access_token,
+          // end_time: 0 // we do not need end_time in the future
+        },
+        headers: { 'Content-Type': 'application/json' },
+        json: true,
+      }
+      doRequest(tokenOptions).then(res => {
+        console.log("statusCode from /updateToken: ", res.statusCode);
+        if (res.statusCode === 200) {
+          count = 3600 * 1000; // if updateToken successfully then call after 1 hr
+          console.log("updateToken successfully");
+        }
+        else if (res.statusCode === 500) { // if no room found, terminate the recursive call
+          console.log(res.body.error);
+          return;
+        }
+        else {
+          count = 1000; // if update token false then call after 1 sec
+          console.log("updateToken fails");
+        }
+        updateAccessToken(count, refresh_token, room_id);
+      })
+      .catch(error => console.log(error));
+    })
+    .catch(error => console.log(error));
   }, count)
 }
 
@@ -142,7 +187,7 @@ app.get('/callback', function (req, res) {
             refresh_token: refresh_token,
             queue: [],
             default_playlist: "",
-            end_time: Date.now() + duration,
+            // end_time: Date.now() + duration,
           },
           headers: { 'Content-Type': 'application/json' },
           json: true,
@@ -161,7 +206,9 @@ app.get('/callback', function (req, res) {
           json: true,
         }
 
-        getNowPlaying(count, intervalOptions); //call this function recursively
+        getNowPlaying(2000, intervalOptions); // call recursively after every 2 secs
+
+        updateAccessToken(3600 * 1000, refresh_token, room_id); // call recursively after every 1 hr
 
         // we can also pass the token to the browser to make requests from there
         res.redirect(client_url + '/room#' +
