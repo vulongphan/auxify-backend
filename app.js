@@ -53,7 +53,7 @@ var getNowPlaying = function (count, options) {
   setTimeout(function () {
     console.log("--------------------------------------------------");
     doRequest(options).then(res => { //wait for the Promise in doRequest() to be resolved, which means getNowPlaying has returned
-      if (res.statusCode === 500) { // if the room no longer exists
+      if (res.body.is_room === false) { // if the room no longer exists
         console.log("getNowPlaying at backend stops");
       }
       else { //call itself again only if the room still exists, stops when the room no longer exists
@@ -93,7 +93,7 @@ var updateAccessToken = function (count, refresh_token, room_id) {
         json: true,
       }
       doRequest(tokenOptions).then(res => {
-        console.log("statusCode from /updateToken: ", res.statusCode);
+        console.log("statusCode from /updateToken: ", res.statusCod);
         if (res.statusCode === 200) {
           count = 5000; // if updateToken successfully then call after 1 hr
           console.log("updateToken successfully");
