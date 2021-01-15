@@ -10,6 +10,7 @@ var bodyParser = require('body-parser');
 var { port, server_url, client_url, spotify_id, spotify_secret } = require('./config');
 var db = require('./data/index.js');
 var auxifyRouter = require('./routes/router');
+const { set } = require('./data/index.js');
 
 const redirect_url = server_url + '/callback';
 
@@ -57,11 +58,11 @@ var getNowPlaying = function (count, options) {
         console.log("getNowPlaying at backend stops");
       }
       else { //call itself again only if the room still exists, stops when the room no longer exists
-        console.log(res.body);
+        // console.log(res.body);
         if (res.body.play) count = 3000; //if the current songs finishes, then wait for 3 secs until the next getNowPlaying call
         else count = 2000;
-        console.log("getNowPlaying() at backend is called at: " + new Date().getHours() + ":" + new Date().getMinutes() + ":" + new Date().getSeconds());
-        console.log("--------------------------------------------------" + "\n" + "\n" + "\n");
+        // console.log("getNowPlaying() at backend is called at: " + new Date().getHours() + ":" + new Date().getMinutes() + ":" + new Date().getSeconds());
+        // console.log("--------------------------------------------------" + "\n" + "\n" + "\n");
         getNowPlaying(count, options)
       }
     })
@@ -108,9 +109,9 @@ var updateAccessToken = function (count, refresh_token, room_id) {
         }
         updateAccessToken(count, refresh_token, room_id);
       })
-      .catch(error => console.log(error));
+        .catch(error => console.log(error));
     })
-    .catch(error => console.log(error));
+      .catch(error => console.log(error));
   }, count)
 }
 
@@ -229,3 +230,46 @@ app.get('/callback', function (req, res) {
 app.use('/api', auxifyRouter);
 
 app.listen(port);
+
+/* listen for change in the number of rooms in db, recursively
+ */
+
+
+const collection = db.collection("rooms");
+var getRooms = function (count) {
+  setTimeout(async function () {
+    //get the number of rooms here
+    // const estimate = await collection.estimatedDocumentCount();
+    // console.log("Number of rooms: " ,estimate);
+    console.log("-------------" + "\n" + "\n");
+    collection.find({}).toArray(function (error, result) {
+      if (error) throw error;
+      console.log("-------------");
+      const len = result.length;
+      for (i = 0; i < len; i++) {
+        console.log(result[i].id)
+      }
+
+      // console.log("getRooms is called at: " + new Date().getHours() + ":" + new Date().getMinutes() + ":" + new Date().getSeconds());
+      // console.log("-------------" + "\n" + "\n" + "\n")
+      //need to delete the current process if there is a change in the database
+      // collection.find({}).toArray(function(error, result) {
+      //   if (error) throw error;
+      //   const len_new = result.length;
+      //   if (len_new === len) getRooms(count);
+      //   else {
+      //     console.log("Database changed");
+      //     return;
+      //   }
+      // })
+    })
+    getRooms(count, n)
+  }, count)
+}
+getRooms(5000, 0);
+
+
+
+
+
+
