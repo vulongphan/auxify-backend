@@ -1,5 +1,3 @@
-var PORT = process.env.PORT || 8888;
-
 //include all neccessary modules
 var express = require('express');
 var request = require('request');
@@ -10,10 +8,9 @@ var bodyParser = require('body-parser');
 var { port, server_url, client_url, spotify_id, spotify_secret } = require('./config');
 var db = require('./data/index.js');
 var auxifyRouter = require('./routes/router');
-const { set } = require('./data/index.js');
-
+const Room = require('./models/room-model');
 const redirect_url = server_url + '/callback';
-
+const duration = 3600 * 1000; // the duration after which access_token expires
 /**
  * Generates a random string containing numbers and letters
  * @param  {number} length The length of the string
@@ -45,73 +42,108 @@ var doRequest = function (options) {
 }
 
 /**
- * a recursive function to update what is currently being played
- * @param {number} count: the time after which getNowPlaying is called again (recursively) if the room still exists 
- * @param {*} options: options to post
+ * a recursive function to update what is currently being played for a room
+ * @param {number} count: the time after which getNowPlayingHelper() is called again (recursively) if the room still exists 
+ * @param {*} room_id: room_id of the room to post
  */
-var getNowPlaying = function (count, options) {
+var getNowPlayingHelper = function (count, room_id) {
   // setTimeout calls getNowPlaying again after count seconds
+  let nowPlayingOptions = {
+    url: server_url + '/api/nowPlaying/' + room_id,
+    headers: { 'Content-Type': 'application/json' },
+    json: true,
+  }
   setTimeout(function () {
     console.log("--------------------------------------------------");
-    doRequest(options).then(res => { //wait for the Promise in doRequest() to be resolved, which means getNowPlaying has returned
-      if (res.body.room_exists === false) { // if the room no longer exists
-        console.log("getNowPlaying at backend stops");
+    doRequest(nowPlayingOptions).then(res => { //wait for the Promise in doRequest() to be resolved, which means getNowPlaying has returned
+      if (res.statusCode === 500) { // if the room no longer exists
+        console.log("getNowPlaying at backend stops at room_id: ", room_id);
       }
       else { //call itself again only if the room still exists, stops when the room no longer exists
         // console.log(res.body);
         if (res.body.play) count = 3000; //if the current songs finishes, then wait for 3 secs until the next getNowPlaying call
         else count = 2000;
-        // console.log("getNowPlaying() at backend is called at: " + new Date().getHours() + ":" + new Date().getMinutes() + ":" + new Date().getSeconds());
-        // console.log("--------------------------------------------------" + "\n" + "\n" + "\n");
-        getNowPlaying(count, options)
+        console.log("getNowPlaying() at backend is called at: " + new Date().getHours() + ":" + new Date().getMinutes() + ":" + new Date().getSeconds() + " at room_id: " + room_id);
+        console.log("--------------------------------------------------" + "\n" + "\n" + "\n");
+        getNowPlayingHelper(count, room_id);
       }
     })
       .catch((error) => console.log(error))
   }, count)
 }
 
-var updateAccessToken = function (count, refresh_token, room_id) {
+/**
+ * a recursive function to check for new rooms in the database and call getNowPlayingHelper() on the respective room
+ * @param {Array} prev_room_ids: an array of room ids in the database from the previous call
+ * @param {number} count: the time after which getNowPlayingHelper() is called again
+*/
+
+var getNowPlaying = async function (prev_room_ids, count) {
+  const rooms = await Room.find();
+  let cur_room_ids = [];
+  let new_room_ids = [];
+  for (i = 0; i < rooms.length; i++) {
+    let room_id = rooms[i].id;
+    if (!prev_room_ids.includes(room_id)) new_room_ids.push(room_id);
+    cur_room_ids.push(room_id);
+  }
+  for (i = 0; i < new_room_ids.length; i++) {
+    let room_id = new_room_ids[i];
+    // console.log("New room_id: ", room_id);
+    getNowPlayingHelper(2000, room_id);
+  }
   setTimeout(function () {
-    let authOptions = {
-      url: 'https://accounts.spotify.com/api/token',
-      headers: { 'Authorization': 'Basic ' + (new Buffer(spotify_id + ':' + spotify_secret).toString('base64')) },
-      form: {
-        grant_type: 'refresh_token',
-        refresh_token: refresh_token
-      },
-      json: true
-    };
-    doRequest(authOptions).then(res => {
-      let access_token = res.body.access_token;
-      console.log("New access_token: ", access_token);
-      let tokenOptions = {
-        url: server_url + '/api/updateToken/' + room_id,
-        body: {
-          access_token: access_token,
-          // end_time: 0 // we do not need end_time in the future
-        },
-        headers: { 'Content-Type': 'application/json' },
-        json: true,
+    getNowPlaying(cur_room_ids, count);
+  }, count)
+}
+
+/**
+ * a recursive function to check access_token for all the rooms in database in each call 
+ * @param {*} count: the time after which the function gets called again
+ */
+
+var updateAccessToken = function (count) {
+  setTimeout(async function () {
+    let rooms = await Room.find();
+    for (i = 0; i < rooms.length; i++) {
+      let end_time = rooms[i].end_time;
+      if (Date.now() >= end_time) {
+        let room_id = rooms[i].id;
+        let refresh_token = rooms[i].refresh_token;
+        let authOptions = {
+          url: 'https://accounts.spotify.com/api/token',
+          headers: { 'Authorization': 'Basic ' + (new Buffer(spotify_id + ':' + spotify_secret).toString('base64')) },
+          form: {
+            grant_type: 'refresh_token',
+            refresh_token: refresh_token
+          },
+          json: true
+        };
+        doRequest(authOptions).then(res => {
+          let access_token = res.body.access_token;
+          console.log("New access_token for room_id: ", room_id, access_token);
+          let tokenOptions = {
+            url: server_url + '/api/updateToken/' + room_id,
+            body: {
+              access_token: access_token,
+              end_time: Date.now() + duration
+            },
+            headers: { 'Content-Type': 'application/json' },
+            json: true,
+          }
+          doRequest(tokenOptions).then(res => {
+            // console.log("statusCode from /updateToken: ", res.statusCode);
+            if (res.statusCode === 200) {
+              console.log("UpdateToken successfully at room_id: ", room_id);
+            }
+            else {
+              console.log(res.body.error);
+            }
+          })
+        })
       }
-      doRequest(tokenOptions).then(res => {
-        console.log("statusCode from /updateToken: ", res.statusCode);
-        if (res.statusCode === 200) {
-          count = 3600 * 1000; // if updateToken successfully then call after 1 hr
-          console.log("updateToken successfully");
-        }
-        else if (res.statusCode === 500) { // if no room found, terminate the recursive call
-          console.log(res.body.error);
-          return;
-        }
-        else {
-          count = 1000; // if update token false then call after 1 sec
-          console.log("updateToken fails");
-        }
-        updateAccessToken(count, refresh_token, room_id);
-      })
-        .catch(error => console.log(error));
-    })
-      .catch(error => console.log(error));
+    }
+    updateAccessToken(count);
   }, count)
 }
 
@@ -175,10 +207,7 @@ app.get('/callback', function (req, res) {
 
         const access_token = body.access_token;
         const refresh_token = body.refresh_token;
-        const duration = 3600 * 1000; //the duration in which the access_token will expire (in mili sec)
-
         const room_id = generateRandomString(4);
-        const count = 2000; //the timeout before function getNowPlaying is being called again
 
         const auxifyOptions = {
           url: server_url + '/api/room',
@@ -188,7 +217,7 @@ app.get('/callback', function (req, res) {
             refresh_token: refresh_token,
             queue: [],
             default_playlist: "",
-            // end_time: Date.now() + duration,
+            end_time: Date.now() + duration,
           },
           headers: { 'Content-Type': 'application/json' },
           json: true,
@@ -199,17 +228,6 @@ app.get('/callback', function (req, res) {
           if (error) console.log(err);
           else console.log(res.body);
         })
-
-        //set up interval for getNowPlaying
-        var intervalOptions = {
-          url: server_url + '/api/nowPlaying/' + room_id,
-          headers: { 'Content-Type': 'application/json' },
-          json: true,
-        }
-
-        getNowPlaying(2000, intervalOptions); // call recursively after every 2 secs
-
-        updateAccessToken(3600 * 1000, refresh_token, room_id); // call recursively after every 1 hr
 
         // we can also pass the token to the browser to make requests from there
         res.redirect(client_url + '/room#' +
@@ -227,46 +245,13 @@ app.get('/callback', function (req, res) {
   }
 });
 
+getNowPlaying([], 2000); // call getNowPlaying recursively every 2 secs
+
+updateAccessToken(2000); //call updateAccessToken recursively every 2 secs
+
 app.use('/api', auxifyRouter);
 
 app.listen(port);
-
-/* listen for change in the number of rooms in db, recursively
- */
-
-
-const collection = db.collection("rooms");
-var getRooms = function (count) {
-  setTimeout(async function () {
-    //get the number of rooms here
-    // const estimate = await collection.estimatedDocumentCount();
-    // console.log("Number of rooms: " ,estimate);
-    console.log("-------------" + "\n" + "\n");
-    collection.find({}).toArray(function (error, result) {
-      if (error) throw error;
-      console.log("-------------");
-      const len = result.length;
-      for (i = 0; i < len; i++) {
-        console.log(result[i].id)
-      }
-
-      // console.log("getRooms is called at: " + new Date().getHours() + ":" + new Date().getMinutes() + ":" + new Date().getSeconds());
-      // console.log("-------------" + "\n" + "\n" + "\n")
-      //need to delete the current process if there is a change in the database
-      // collection.find({}).toArray(function(error, result) {
-      //   if (error) throw error;
-      //   const len_new = result.length;
-      //   if (len_new === len) getRooms(count);
-      //   else {
-      //     console.log("Database changed");
-      //     return;
-      //   }
-      // })
-    })
-    getRooms(count, n)
-  }, count)
-}
-getRooms(5000, 0);
 
 
 
