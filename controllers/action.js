@@ -201,17 +201,17 @@ deleteRoom = (req, res) => {
 updateToken = (req, res) => {
     const room_id = req.params.id;
     const access_token = req.body.access_token;
-    // const end_time = req.body.end_time;
+    const end_time = req.body.end_time;
 
     // we have to do findOne first before update the document with updateOne
     Room.findOne({ id: room_id }, (err, room) => {
         if (!err && room) { // if room exists
-            Room.updateOne({ id: room_id }, { access_token: access_token/*,end_time: end_time */ }, (err, room) => { // updateOne does not seem to be able to report when no room found
+            Room.updateOne({ id: room_id }, { access_token: access_token, end_time: end_time }, (err, room) => { // updateOne does not seem to be able to report when no room found
                 if (err) return res.status(400).json(err);
                 else return res.status(200).json({ success: true });
             })
         }
-        else if (!room) return res.status(500).json({ error: "No room found with the given id"/*, room_exists: false*/});
+        else if (!room) return res.status(500).json({ error: "No room found with the given id", room_exists: false});
         else return res.status(404).json({ err });
     })
 
@@ -265,7 +265,6 @@ async function play(room, s) {
 }
 
 
-
 /**
  * POST: update getNowPlaying in the database every two seconds 
  */
@@ -283,7 +282,7 @@ getNowPlaying = (req, res) => {
             s.getMyCurrentPlaybackState({})
                 .then(function (data) { //until the Promise returns
                     const body = data.body;
-                    if (JSON.stringify(body) !== "{}") { //if a song has been played on Spotify
+                    if (JSON.stringify(body) !== "{}" && body.item != null) { //if a song has been played on Spotify
                         const nowPlaying = {
                             playing: true,
                             currentPosition: body.progress_ms,
@@ -296,7 +295,7 @@ getNowPlaying = (req, res) => {
                         //update the corresponding document/room in the collection with the nowPlaying object
                         Room.updateOne({ id: room_id }, { nowPlaying: nowPlaying })
                             .then(() => {
-                                console.log("Update NowPlaying successfully")
+                                console.log("Update NowPlaying successfully at room_id: " + room_id)
                             })
 
                         //check if song is about to end, and play next song
