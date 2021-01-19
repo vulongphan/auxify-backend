@@ -20,17 +20,21 @@ $ yarn install
 ```
 
 5. You need to create an `.env` file in the root directory by first copy the content of `.env.example`
-`$ cp .env.example .env` for MacOS
-`$ copy .env.example .env` for Windows
+* `$ cp .env.example .env` for MacOS
+* `$ copy .env.example .env` for Windows
 
 6. You need to update `.env` with your own Spotify ID and Spotify Secret. Please go to [Spotify for Developers](https://developer.spotify.com/dashboard/) and log in with your account.
+
 Then go to dashboard and click on "Create a new app". Here you can choose to name your own app, however, you must have the correct redirect URIs. 
+
 Your `redirect_uri` is `server_url` + `/callback`.
+
 For example, if you choose to develop locally and your `SERVER_URL` is `http://localhost:8888` in `.env` then your `redirect_uri` is `http://localhost:8888/callback`.
+
 After you have created an app on dashboard, you will get your own spotify-id and secret to fill in `.env`.
 
 7. Start MongoDB service if you have not already. If you install MongoDB with homebrew, you can run the following command with brew
-`$ brew services start mongodb-community@4.4`
+* `$ brew services start mongodb-community@4.4`
 
 8. If you want to set an expire time for a room (currently in deployment we set a 4 hour expiry for each room), run:
 ```
