@@ -25,7 +25,7 @@ $ yarn install
 
 6. You need to update `.env` with your own Spotify ID and Spotify Secret. Please go to [Spotify for Developers](https://developer.spotify.com/dashboard/) and log in with your account.
 Then go to dashboard and click on "Create a new app". Here you can choose to name your own app, however, you must have the correct redirect URIs. 
-Your redirect_uri is server_url + `/callback`.
+Your `redirect_uri` is `server_url` + `/callback`.
 For example, if you choose to develop locally and your `SERVER_URL` is `http://localhost:8888` in `.env` then your `redirect_uri` is `http://localhost:8888/callback`.
 After you have created an app on dashboard, you will get your own spotify-id and secret to fill in `.env`.
 
@@ -40,4 +40,4 @@ $ db.rooms.ensureIndex( { "createdAt": 1 }, { expireAfterSeconds: 14400 } )
 
 ```
 
-8. Open two terminal windows (one for backend and one for frontend) and navigate each to the correct folder.
+9. Open two terminal windows (one for backend and one for frontend) and navigate each to the correct folder.
