@@ -1,5 +1,6 @@
 const Room = require('../models/room-model');
 var SpotifyWebApi = require('spotify-web-api-node');
+const MAX_DOWNVOTE = -10;
 
 /**
  * POST: create a new room and save it in the database
@@ -157,7 +158,10 @@ vote = (req, res) => {
             // i is the index where vote is changed, amount is the number of vote changed
             const queue = room.queue;
             queue[index].vote += amount;
-            sortQueue(queue, index, amount);
+            // if the new vote is less than the number of downvotes allowed
+            if (queue[index].vote < MAX_DOWNVOTE) queue.splice(index, 1);
+            // otherwise sort the queue 
+            else sortQueue(queue, index, amount);
             Room.updateOne({ id: room_id }, { queue: queue }, (err) => {
                 if (err) return res.status(400).json(err);
                 else return res.status(200).json({ success: true });
@@ -211,7 +215,7 @@ updateToken = (req, res) => {
                 else return res.status(200).json({ success: true });
             })
         }
-        else if (!room) return res.status(500).json({ error: "No room found with the given id", room_exists: false});
+        else if (!room) return res.status(500).json({ error: "No room found with the given id", room_exists: false });
         else return res.status(404).json({ err });
     })
 
@@ -324,7 +328,7 @@ getNowPlaying = (req, res) => {
                 });
         }
         else if (err) return res.status(404).json({ err });
-        else return res.status(500).json({ error: "No room found with the given id", room_exists: false})
+        else return res.status(500).json({ error: "No room found with the given id", room_exists: false })
     })
 }
 

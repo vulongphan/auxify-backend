@@ -149,39 +149,6 @@ var updateAccessToken = function (count) {
   }, count)
 }
 
-
-var updateAccessToken = function (refresh_token, room_id) {
-  let authOptions = {
-    url: 'https://accounts.spotify.com/api/token',
-    headers: { 'Authorization': 'Basic ' + (new Buffer(spotify_id + ':' + spotify_secret).toString('base64')) },
-    form: {
-      grant_type: 'refresh_token',
-      refresh_token: refresh_token
-    },
-    json: true
-  };
-  doRequest(authOptions).then(res => {
-    let access_token = res.body.access_token;
-    console.log("New access_token: ", access_token);
-    let tokenOptions = {
-      url: server_url + '/api/updateToken/' + room_id,
-      body: {
-        access_token: access_token,
-        end_time: end_time + duration
-      },
-      headers: { 'Content-Type': 'application/json' },
-      json: true,
-    }
-    doRequest(tokenOptions).then(res => {
-      console.log("statusCode from /updateToken: ", res.statusCode);
-      if (res.statusCode === 200) console.log("updateToken successfully");
-      else console.log("updateToken fails");
-    })
-      .catch(error => console.log(error));
-  })
-    .catch(error => console.log(error));
-}
-
 var stateKey = 'spotify_auth_state';
 var app = express();
 db.on('error', console.error.bind(console, 'MongoDB connection error:'));
