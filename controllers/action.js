@@ -1,6 +1,6 @@
 const Room = require('../models/room-model');
 var SpotifyWebApi = require('spotify-web-api-node');
-const MAX_DOWNVOTE = -10;
+const MAX_DOWNVOTE = -5;
 
 /**
  * POST: create a new room and save it in the database
