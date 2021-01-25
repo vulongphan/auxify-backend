@@ -1,6 +1,6 @@
 const Room = require('../models/room-model');
 var SpotifyWebApi = require('spotify-web-api-node');
-const MAX_DOWNVOTE = -5;
+const MAX_DOWNVOTE = -3; // min value of vote for the song to be kept in queue
 
 /**
  * POST: create a new room and save it in the database
