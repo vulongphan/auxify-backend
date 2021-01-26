@@ -1,6 +1,7 @@
 const Room = require('../models/room-model');
 var SpotifyWebApi = require('spotify-web-api-node');
 const MAX_DOWNVOTE = -3; // min value of vote for the song to be kept in queue
+const MAX_REPORT = 3; //max value of report for the song to be kept in queue
 
 /**
  * POST: create a new room and save it in the database
@@ -163,6 +164,31 @@ vote = (req, res) => {
                 if (queue[index].vote < MAX_DOWNVOTE) queue.splice(index, 1);
                 // otherwise sort the queue 
                 else sortQueue(queue, index, amount);
+                Room.updateOne({ id: room_id }, { queue: queue }, (err) => {
+                    if (err) return res.status(400).json(err);
+                    else return res.status(200).json({ success: true });
+                })
+            }
+        }
+    })
+}
+
+/**
+ * POST: report
+ */
+report = (req, res) => {
+    const room_id = req.params.id;
+    const index = req.body.index;
+    const amount = req.body.amount;
+
+    Room.findOne({ id: room_id }, (err, room) => {
+        if (!err && room) {
+            // i is the index where vote is changed, amount is the number of report changed
+            const queue = room.queue;
+            if (index <= queue.length - 1) { // to make sure index is in a valid range
+                queue[index].report += amount;
+                // if the new report is more than the number of reports allowed
+                if (queue[index].report > MAX_REPORT) queue.splice(index, 1);
                 Room.updateOne({ id: room_id }, { queue: queue }, (err) => {
                     if (err) return res.status(400).json(err);
                     else return res.status(200).json({ success: true });
@@ -343,6 +369,7 @@ module.exports = {
     addToQueue,
     removeFromQueue,
     vote,
+    report,
     playDefault,
     deleteRoom,
     updateToken,

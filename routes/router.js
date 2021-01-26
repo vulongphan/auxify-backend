@@ -9,6 +9,7 @@ router.get('/room/:id', action.getRoom);
 router.post('/addQueue/:id', action.addToQueue);
 router.get('/removeQueue/:id', action.removeFromQueue);
 router.post('/vote/:id', action.vote);
+router.post('/report/:id', action.report);
 router.post('/playlist/:id', action.playDefault);
 router.get('/deleteRoom/:id',action.deleteRoom);
 router.post('/updateToken/:id', action.updateToken);
