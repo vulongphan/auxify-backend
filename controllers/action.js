@@ -157,15 +157,17 @@ vote = (req, res) => {
         if (!err && room) {
             // i is the index where vote is changed, amount is the number of vote changed
             const queue = room.queue;
-            queue[index].vote += amount;
-            // if the new vote is less than the number of downvotes allowed
-            if (queue[index].vote < MAX_DOWNVOTE) queue.splice(index, 1);
-            // otherwise sort the queue 
-            else sortQueue(queue, index, amount);
-            Room.updateOne({ id: room_id }, { queue: queue }, (err) => {
-                if (err) return res.status(400).json(err);
-                else return res.status(200).json({ success: true });
-            })
+            if (index <= queue.length - 1) { // to make sure index is in a valid range
+                queue[index].vote += amount;
+                // if the new vote is less than the number of downvotes allowed
+                if (queue[index].vote < MAX_DOWNVOTE) queue.splice(index, 1);
+                // otherwise sort the queue 
+                else sortQueue(queue, index, amount);
+                Room.updateOne({ id: room_id }, { queue: queue }, (err) => {
+                    if (err) return res.status(400).json(err);
+                    else return res.status(200).json({ success: true });
+                })
+            }
         }
     })
 }
