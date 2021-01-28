@@ -19,7 +19,6 @@ const Room = new Schema(
         access_token: { type: String, required: true },
         refresh_token: { type: String, required: true },
         queue: { type: [], required: true },
-        top_song: {type: String, default: ""},
         default_playlist: {},
         nowPlaying: {
             type: nowPlaying, default: {
