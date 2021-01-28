@@ -1,7 +1,8 @@
 const Room = require('../models/room-model');
 var SpotifyWebApi = require('spotify-web-api-node');
 const MAX_DOWNVOTE = -3; // min value of vote for the song to be kept in queue
-const MAX_REPORT = 3; //max value of report for the song to be kept in queue
+const MAX_REPORT = 3; // max value of report for the song to be kept in queue
+var top_song = ""; // name of the song at the top of the queue
 
 /**
  * POST: create a new room and save it in the database
@@ -268,6 +269,7 @@ async function play(room, s) {
     var options;
     //play the next song in the queue when the queue is not empty
     if (room.queue.length > 0) {
+        top_song = room.queue[0].name; // store away the top of the queue before playing this song
         options = {
             uris: [room.queue[0].uri],
         };
@@ -276,15 +278,17 @@ async function play(room, s) {
                 console.log("play() from queue returns at: " + new Date().getHours() + ":" + new Date().getMinutes() + ":" + new Date().getSeconds())
                 await Room.updateOne({ id: room.id }, { $pop: { queue: -1 } }) //remove the next song from the queue after being played
             })
-            .catch(err => console.log(err));
+            .catch(err => {
+                console.log(err);
+            });
     }
-    //if the queue is empty, play from default playlist;
     else if (room.default_playlist) {
         await s.getPlaylist(room.default_playlist.id)
             .then(async res => {
                 const playlist = res.body.tracks.items;
                 var position = Math.floor(Math.random() * playlist.length);
                 var nextSongURI = playlist[position].track.uri;
+                top_song = playlist[position].track.name;
                 options = {
                     uris: [nextSongURI],
                 };
@@ -292,8 +296,12 @@ async function play(room, s) {
                     console.log("play() from playlist returns at: " + new Date().getHours() + ":" + new Date().getMinutes() + ":" + new Date().getSeconds())
                 })
                     .catch(err => console.log(err));
+            })
+            .catch(err => {
+                console.log(err);
             });
     }
+    else top_song = "";
 }
 
 
@@ -333,10 +341,19 @@ getNowPlaying = (req, res) => {
                         //check if song is about to end, and play next song
                         if (nowPlaying.playing && nowPlaying.currentPosition === 0) {
                             play(room, s).then(() => {
-                                return res.status(200).json({ message: "next song is played or Spotify paused", play: true })
-                            });
+                                return res.status(200).json({ message: "next song is played", play: true })
+                            })
                         }
-                        else return res.status(200).json({ message: "in current song" })
+                        else {
+                            // if the current song is not the previous top song in queue and near the end of the current song
+                            if (nowPlaying.name !== top_song && nowPlaying.currentPosition > nowPlaying.duration - 4000) {
+                                play(room, s).then(() => {
+                                    return res.status(200).json({ message: "next song is played", play: true })
+                                })
+                            }
+                            return res.status(200).json({ message: "in current song" })
+                        }
+                        // return res.status(200).json({ message: "in current song" })
                     }
                     else return res.status(200).json({ message: "Please play a song on your Spotify app" })
 
