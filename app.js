@@ -108,6 +108,7 @@ var updateAccessToken = function (count) {
   setTimeout(async function () {
     let rooms = await Room.find();
     for (i = 0; i < rooms.length; i++) {
+      console.log("Calling updateAccessToken for room_id at: ", rooms[i].id);
       let end_time = rooms[i].end_time;
       if (Date.now() >= end_time) {
         let room_id = rooms[i].id;
