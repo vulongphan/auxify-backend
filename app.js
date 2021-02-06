@@ -150,6 +150,33 @@ var updateAccessToken = function (count) {
   }, count)
 }
 
+/**
+ * a recursive function to remove songs in queue that are expired
+ */
+
+var updateQueue = function (count) {
+  setTimeout(async function () {
+    let rooms = await Room.find();
+    for (i = 0; i < rooms.length; i++) {
+      console.log("Calling updateQueue for room_id at: ", rooms[i].id);
+      let room_id = rooms[i].id;
+      let queue = rooms[i].queue;
+      for (j = 0; j < queue.length; j++) {
+        let expire_time = queue[j].expire_time;
+        if (Date.now() >= expire_time) {
+          console.log("song expired");
+          queue.splice(j, 1);
+          Room.updateOne({ id: room_id }, { queue: queue }, (err) => {
+            if (err) console.log(err);
+          })
+        }
+      }
+    }
+    updateQueue(count);
+  }, count)
+
+}
+
 var stateKey = 'spotify_auth_state';
 var app = express();
 db.on('error', console.error.bind(console, 'MongoDB connection error:'));
@@ -248,6 +275,8 @@ app.get('/callback', function (req, res) {
 });
 
 getNowPlaying([], 2000); // call getNowPlaying recursively every 2 secs
+
+updateQueue(10000); // call updateQueue recursively every 10 secs
 
 updateAccessToken(2000); //call updateAccessToken recursively every 2 secs
 
