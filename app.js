@@ -5,12 +5,17 @@ var cors = require('cors');
 var querystring = require('querystring');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
-var { port, server_url, client_url, spotify_id, spotify_secret } = require('./config');
+var { port, server_url, client_url, spotify_id, spotify_secret, pusher_appId, pusher_key, pusher_secret, pusher_cluster } = require('./config');
 var db = require('./data/index.js');
 var auxifyRouter = require('./routes/router');
 const Room = require('./models/room-model');
+
+const Pusher = require('pusher');
+
 const redirect_url = server_url + '/callback';
 const duration = 3600 * 1000; // the duration after which access_token expires
+
+
 /**
  * Generates a random string containing numbers and letters
  * @param  {number} length The length of the string
@@ -152,7 +157,56 @@ var updateAccessToken = function (count) {
 
 var stateKey = 'spotify_auth_state';
 var app = express();
+
+const pusher = new Pusher({
+  appId: pusher_appId,
+  key: pusher_key,
+  secret: pusher_secret,
+  cluster: pusher_cluster,
+  encrypted: true,
+});
+const channel = 'rooms';
+
 db.on('error', console.error.bind(console, 'MongoDB connection error:'));
+
+db.once('open', () => {
+  app.listen(port, () => {
+    console.log('Node server running on port ', port);
+  });
+
+  let roomCollection = db.collection('rooms');
+  let changeStream = roomCollection.watch();
+
+  changeStream.on('change', (change) => {
+    console.log(change);
+    /*
+    Changes that we need to listen for are (given the room id):
+    - current song being played (update)
+    - add songs to queue (update)
+    - add a default playlist (update)
+    - vote / report a song (update)
+    */
+
+    // if (change.operationType === 'insert') { // when a new room is inserted
+    //   let room = change.fullDocument;
+    //   pusher.trigger(
+    //     channel,
+    //     'inserted',
+    //     {
+    //       id: room._id,
+    //       room: room.room,
+    //     }
+    //   );
+    // } else if (change.operationType === 'delete') {
+    //   pusher.trigger(
+    //     channel,
+    //     'deleted',
+    //     change.documentKey._id
+    //   );
+    // }
+
+  });
+});
 
 app.use(cors({ origin: true, credentials: true }))
   .use(cookieParser())
@@ -253,7 +307,7 @@ updateAccessToken(2000); //call updateAccessToken recursively every 2 secs
 
 app.use('/api', auxifyRouter);
 
-app.listen(port);
+// app.listen(port);
 
 
 

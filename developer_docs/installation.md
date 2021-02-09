@@ -41,3 +41,9 @@ $ db.rooms.ensureIndex( { "createdAt": 1 }, { expireAfterSeconds: 14400 } )
 ```
 
 9. Open two terminal windows (one for backend and one for frontend) and navigate each to the correct folder.
+
+10. Creating a replica set in MongoDB: run `mongod --dbpath /usr/local/var/mongoRS --port 27000 --replSet "rs"`. The replica set name is `rs` and it runs on port `27000`
+
+11. Connecting to the replica set: run `mongo mongodb://127.0.0.1:27000`
+
+12. Then create database `use auxifyDB` and initiate a replica set `rs.initiate()`
