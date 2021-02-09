@@ -10,6 +10,7 @@ var db = require('./data/index.js');
 var auxifyRouter = require('./routes/router');
 const Room = require('./models/room-model');
 
+const mongo = require('mongodb');
 const Pusher = require('pusher');
 
 const redirect_url = server_url + '/callback';
@@ -163,8 +164,10 @@ const pusher = new Pusher({
   key: pusher_key,
   secret: pusher_secret,
   cluster: pusher_cluster,
-  encrypted: true,
+  // encrypted: true,
+  useTLS: true,
 });
+
 const channel = 'rooms';
 
 db.on('error', console.error.bind(console, 'MongoDB connection error:'));
@@ -178,7 +181,6 @@ db.once('open', () => {
   let changeStream = roomCollection.watch();
 
   changeStream.on('change', (change) => {
-    console.log(change);
     /*
     Changes that we need to listen for are (given the room id):
     - current song being played (update)
@@ -186,6 +188,17 @@ db.once('open', () => {
     - add a default playlist (update)
     - vote / report a song (update)
     */
+
+    if (change.operationType === 'update') {
+      let id = change.documentKey._id;
+      Room.findOne({'_id': new mongo.ObjectID(id)}, (err, room) => {
+        if (!err && room) {
+          console.log(room);
+          pusher.trigger(channel, 'update', /*room*/ {message: "Hi"});
+        }
+      })
+
+    }
 
     // if (change.operationType === 'insert') { // when a new room is inserted
     //   let room = change.fullDocument;
@@ -207,6 +220,7 @@ db.once('open', () => {
 
   });
 });
+
 
 app.use(cors({ origin: true, credentials: true }))
   .use(cookieParser())
