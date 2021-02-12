@@ -184,17 +184,21 @@ db.once('open', () => {
       Room.findOne({ '_id': new mongo.ObjectID(id) }, async (err, room) => {
         if (!err && room) {
           let room_id = room.id;
-          let channel = 'room' + room_id; 
+          let channel = 'room' + room_id;
           if (change.updateDescription.updatedFields.nowPlaying !== undefined) {
             pusher.trigger(channel, 'updateNowPlaying', { nowPlaying: room.nowPlaying })
-            // .then(res => { console.log(res) })
-            // .catch(error => console.log(error));
+              // .then(res => { console.log(res) })
+              .catch(error => console.log(error));
           }
           else if (change.updateDescription.updatedFields.queue !== undefined) {
             pusher.trigger(channel, 'updateQueue', { queue: room.queue })
+              // .then(res => { console.log(res) })
+              .catch(error => console.log(error));
           }
           else if (change.updateDescription.updatedFields.default_playlist !== undefined) {
-            pusher.trigger(channel, 'updateDefaultPlaylist', {default_playlist: room.default_playlist})
+            pusher.trigger(channel, 'updateDefaultPlaylist', { default_playlist: room.default_playlist })
+              // .then(res => { console.log(res) })
+              .catch(error => console.log(error));
           }
         }
         else if (!room) console.log("No room found in database");
