@@ -185,42 +185,26 @@ db.once('open', () => {
     - add a default playlist (update)
     - vote / report a song (update)
     */
-    
+
     if (change.operationType === 'update') {
-      console.log(change);
+      // console.log(change);
       let id = change.documentKey._id;
       Room.findOne({ '_id': new mongo.ObjectID(id) }, async (err, room) => {
         if (!err && room) {
           if (change.updateDescription.updatedFields.nowPlaying !== undefined) {
             pusher.trigger(channel, 'updateNowPlaying', { nowPlaying: room.nowPlaying })
-              // .then(res => { console.log(res) })
-              // .catch(error => console.log(error));
+            // .then(res => { console.log(res) })
+            // .catch(error => console.log(error));
           }
           else if (change.updateDescription.updatedFields.queue !== undefined) {
-            pusher.trigger(channel, 'updateQueue', {queue: room.queue})
+            pusher.trigger(channel, 'updateQueue', { queue: room.queue })
+          }
+          else if (change.updateDescription.updatedFields.default_playlist !== undefined) {
+            pusher.trigger(channel, 'updateDefaultPlaylist', {default_playlist: room.default_playlist})
           }
         }
       })
     }
-
-    // if (change.operationType === 'insert') { // when a new room is inserted
-    //   let room = change.fullDocument;
-    //   pusher.trigger(
-    //     channel,
-    //     'inserted',
-    //     {
-    //       id: room._id,
-    //       room: room.room,
-    //     }
-    //   );
-    // } else if (change.operationType === 'delete') {
-    //   pusher.trigger(
-    //     channel,
-    //     'deleted',
-    //     change.documentKey._id
-    //   );
-    // }
-
   });
 });
 
