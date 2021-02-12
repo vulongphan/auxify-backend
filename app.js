@@ -164,13 +164,10 @@ const pusher = new Pusher({
   key: pusher_key,
   secret: pusher_secret,
   cluster: pusher_cluster,
-  // encrypted: true,
-  useTLS: true,
+  encrypted: true,
 });
 
 const channel = 'rooms';
-
-db.on('error', console.error.bind(console, 'MongoDB connection error:'));
 
 db.once('open', () => {
   app.listen(port, () => {
@@ -188,16 +185,22 @@ db.once('open', () => {
     - add a default playlist (update)
     - vote / report a song (update)
     */
-
+    
     if (change.operationType === 'update') {
+      console.log(change);
       let id = change.documentKey._id;
-      Room.findOne({'_id': new mongo.ObjectID(id)}, (err, room) => {
+      Room.findOne({ '_id': new mongo.ObjectID(id) }, async (err, room) => {
         if (!err && room) {
-          console.log(room);
-          pusher.trigger(channel, 'update', /*room*/ {message: "Hi"});
+          if (change.updateDescription.updatedFields.nowPlaying !== undefined) {
+            pusher.trigger(channel, 'updateNowPlaying', { nowPlaying: room.nowPlaying })
+              // .then(res => { console.log(res) })
+              // .catch(error => console.log(error));
+          }
+          else if (change.updateDescription.updatedFields.queue !== undefined) {
+            pusher.trigger(channel, 'updateQueue', {queue: room.queue})
+          }
         }
       })
-
     }
 
     // if (change.operationType === 'insert') { // when a new room is inserted
@@ -220,7 +223,6 @@ db.once('open', () => {
 
   });
 });
-
 
 app.use(cors({ origin: true, credentials: true }))
   .use(cookieParser())
