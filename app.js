@@ -167,8 +167,9 @@ const pusher = new Pusher({
   encrypted: true,
 });
 
-const channel = 'rooms';
-
+/**
+ * The function listens for changes in database then pushes the changes to Pusher App through the channel that corresponds to the room_id
+ */
 db.once('open', () => {
   app.listen(port, () => {
     console.log('Node server running on port ', port);
@@ -178,19 +179,12 @@ db.once('open', () => {
   let changeStream = roomCollection.watch();
 
   changeStream.on('change', (change) => {
-    /*
-    Changes that we need to listen for are (given the room id):
-    - current song being played (update)
-    - add songs to queue (update)
-    - add a default playlist (update)
-    - vote / report a song (update)
-    */
-
     if (change.operationType === 'update') {
-      // console.log(change);
       let id = change.documentKey._id;
       Room.findOne({ '_id': new mongo.ObjectID(id) }, async (err, room) => {
         if (!err && room) {
+          let room_id = room.id;
+          let channel = 'room' + room_id; 
           if (change.updateDescription.updatedFields.nowPlaying !== undefined) {
             pusher.trigger(channel, 'updateNowPlaying', { nowPlaying: room.nowPlaying })
             // .then(res => { console.log(res) })
@@ -203,6 +197,8 @@ db.once('open', () => {
             pusher.trigger(channel, 'updateDefaultPlaylist', {default_playlist: room.default_playlist})
           }
         }
+        else if (!room) console.log("No room found in database");
+        else console.log(err);
       })
     }
   });
