@@ -5,12 +5,18 @@ var cors = require('cors');
 var querystring = require('querystring');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
-var { port, server_url, client_url, spotify_id, spotify_secret } = require('./config');
+var { port, server_url, client_url, spotify_id, spotify_secret, pusher_appId, pusher_key, pusher_secret, pusher_cluster } = require('./config');
 var db = require('./data/index.js');
 var auxifyRouter = require('./routes/router');
 const Room = require('./models/room-model');
+
+const mongo = require('mongodb');
+const Pusher = require('pusher');
+
 const redirect_url = server_url + '/callback';
 const duration = 3600 * 1000; // the duration after which access_token expires
+
+
 /**
  * Generates a random string containing numbers and letters
  * @param  {number} length The length of the string
@@ -152,7 +158,55 @@ var updateAccessToken = function (count) {
 
 var stateKey = 'spotify_auth_state';
 var app = express();
-db.on('error', console.error.bind(console, 'MongoDB connection error:'));
+
+const pusher = new Pusher({
+  appId: pusher_appId,
+  key: pusher_key,
+  secret: pusher_secret,
+  cluster: pusher_cluster,
+  encrypted: true,
+});
+
+/**
+ * The function listens for changes in database then pushes the changes to Pusher App through the channel that corresponds to the room_id
+ */
+db.once('open', () => {
+  app.listen(port, () => {
+    console.log('Node server running on port ', port);
+  });
+
+  let roomCollection = db.collection('rooms');
+  let changeStream = roomCollection.watch();
+
+  changeStream.on('change', (change) => {
+    if (change.operationType === 'update') {
+      let id = change.documentKey._id;
+      Room.findOne({ '_id': new mongo.ObjectID(id) }, async (err, room) => {
+        if (!err && room) {
+          let room_id = room.id;
+          let channel = 'room' + room_id;
+          if (change.updateDescription.updatedFields.nowPlaying !== undefined) {
+            pusher.trigger(channel, 'updateNowPlaying', { nowPlaying: room.nowPlaying })
+              // .then(res => { console.log(res) })
+              .catch(error => console.log(error));
+          }
+          else if (change.updateDescription.updatedFields.queue !== undefined) {
+            pusher.trigger(channel, 'updateQueue', { queue: room.queue })
+              // .then(res => { console.log(res) })
+              .catch(error => console.log(error));
+          }
+          else if (change.updateDescription.updatedFields.default_playlist !== undefined) {
+            pusher.trigger(channel, 'updateDefaultPlaylist', { default_playlist: room.default_playlist })
+              // .then(res => { console.log(res) })
+              .catch(error => console.log(error));
+          }
+        }
+        else if (!room) console.log("No room found in database");
+        else console.log(err);
+      })
+    }
+  });
+});
 
 app.use(cors({ origin: true, credentials: true }))
   .use(cookieParser())
@@ -253,7 +307,7 @@ updateAccessToken(2000); //call updateAccessToken recursively every 2 secs
 
 app.use('/api', auxifyRouter);
 
-app.listen(port);
+// app.listen(port);
 
 
 
