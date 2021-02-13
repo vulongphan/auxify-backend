@@ -87,7 +87,7 @@ var getNowPlayingHelper = function (count, room_id) {
 */
 
 var getNowPlaying = async function (prev_room_ids, count) {
-  const rooms = await Room.find();
+  const rooms = await Room.find().catch(err => console.log(err));
   let cur_room_ids = [];
   let new_room_ids = [];
   for (i = 0; i < rooms.length; i++) {
@@ -112,7 +112,7 @@ var getNowPlaying = async function (prev_room_ids, count) {
 
 var updateAccessToken = function (count) {
   setTimeout(async function () {
-    let rooms = await Room.find();
+    let rooms = await Room.find().catch(err => console.log(err));
     for (i = 0; i < rooms.length; i++) {
       console.log("Calling updateAccessToken for room_id at: ", rooms[i].id);
       let end_time = rooms[i].end_time;
