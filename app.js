@@ -121,7 +121,7 @@ var updateAccessToken = function (count) {
         let refresh_token = rooms[i].refresh_token;
         let authOptions = {
           url: 'https://accounts.spotify.com/api/token',
-          headers: { 'Authorization': 'Basic ' + (new Buffer(spotify_id + ':' + spotify_secret).toString('base64')) },
+          headers: { 'Authorization': 'Basic ' + (Buffer.from(spotify_id + ':' + spotify_secret).toString('base64')) },
           form: {
             grant_type: 'refresh_token',
             refresh_token: refresh_token
