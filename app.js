@@ -110,50 +110,47 @@ var getNowPlaying = async function (prev_room_ids, count) {
  * @param {*} count: the time after which the function gets called again
  */
 
-var updateAccessToken = function (count) {
-  setTimeout(async function () {
-    let rooms = await Room.find().catch(err => console.log(err));
-    for (i = 0; i < rooms.length; i++) {
-      console.log("Calling updateAccessToken for room_id at: ", rooms[i].id);
-      let end_time = rooms[i].end_time;
-      if (Date.now() >= end_time) {
-        let room_id = rooms[i].id;
-        let refresh_token = rooms[i].refresh_token;
-        let authOptions = {
-          url: 'https://accounts.spotify.com/api/token',
-          headers: { 'Authorization': 'Basic ' + (Buffer.from(spotify_id + ':' + spotify_secret).toString('base64')) },
-          form: {
-            grant_type: 'refresh_token',
-            refresh_token: refresh_token
+var updateAccessToken = async function () {
+  let rooms = await Room.find().catch(err => console.log(err));
+  for (i = 0; i < rooms.length; i++) {
+    console.log("Calling updateAccessToken for room_id at: ", rooms[i].id);
+    let end_time = rooms[i].end_time;
+    if (Date.now() >= end_time) {
+      let room_id = rooms[i].id;
+      let refresh_token = rooms[i].refresh_token;
+      let authOptions = {
+        url: 'https://accounts.spotify.com/api/token',
+        headers: { 'Authorization': 'Basic ' + (Buffer.from(spotify_id + ':' + spotify_secret).toString('base64')) },
+        form: {
+          grant_type: 'refresh_token',
+          refresh_token: refresh_token
+        },
+        json: true
+      };
+      doRequest(authOptions).then(res => {
+        let access_token = res.body.access_token;
+        console.log("New access_token for room_id: ", room_id, access_token);
+        let tokenOptions = {
+          url: server_url + '/api/updateToken/' + room_id,
+          body: {
+            access_token: access_token,
+            end_time: Date.now() + duration
           },
-          json: true
-        };
-        doRequest(authOptions).then(res => {
-          let access_token = res.body.access_token;
-          console.log("New access_token for room_id: ", room_id, access_token);
-          let tokenOptions = {
-            url: server_url + '/api/updateToken/' + room_id,
-            body: {
-              access_token: access_token,
-              end_time: Date.now() + duration
-            },
-            headers: { 'Content-Type': 'application/json' },
-            json: true,
+          headers: { 'Content-Type': 'application/json' },
+          json: true,
+        }
+        doRequest(tokenOptions).then(res => {
+          // console.log("statusCode from /updateToken: ", res.statusCode);
+          if (res.statusCode === 200) {
+            console.log("UpdateToken successfully at room_id: ", room_id);
           }
-          doRequest(tokenOptions).then(res => {
-            // console.log("statusCode from /updateToken: ", res.statusCode);
-            if (res.statusCode === 200) {
-              console.log("UpdateToken successfully at room_id: ", room_id);
-            }
-            else {
-              console.log(res.body.error);
-            }
-          })
+          else {
+            console.log(res.body.error);
+          }
         })
-      }
+      })
     }
-    updateAccessToken(count);
-  }, count)
+  }
 }
 
 var stateKey = 'spotify_auth_state';
@@ -301,9 +298,11 @@ app.get('/callback', function (req, res) {
   }
 });
 
+setInterval(updateAccessToken, 3000); // call updateAccessToken every 3 secs
+
 getNowPlaying([], 2000); // call getNowPlaying recursively every 2 secs
 
-updateAccessToken(2000); //call updateAccessToken recursively every 2 secs
+
 
 app.use('/api', auxifyRouter);
 
