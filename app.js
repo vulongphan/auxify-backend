@@ -117,13 +117,12 @@ var getNowPlaying = function (prev_room_ids, count) {
 }
 
 /**
- * a recursive function to check access_token for all the rooms in database in each call 
+ * a function to check access_token for all the rooms in database in each call 
  * @param {*} count: the time after which the function gets called again
  */
 
-var updateAccessToken = function (count) {
-  setTimeout(async function () {
-    let rooms = await Room.find().catch(err => console.log(err));
+var updateAccessToken = async function () {
+  Room.find().then(rooms => {
     for (i = 0; i < rooms.length; i++) {
       console.log("Calling updateAccessToken for room_id at: ", rooms[i].id);
       let end_time = rooms[i].end_time;
@@ -163,8 +162,8 @@ var updateAccessToken = function (count) {
         })
       }
     }
-    updateAccessToken(count);
-  }, count)
+  })
+    .catch(err => console.log(err))
 }
 
 var stateKey = 'spotify_auth_state';
@@ -312,13 +311,12 @@ app.get('/callback', function (req, res) {
   }
 });
 
-getNowPlaying(new Set(), 2000); // call getNowPlaying recursively every 2 secs 
+setInterval(updateAccessToken, 2000); // call updateAccessToken non-recursively every 2 secs
 
-updateAccessToken(2000); //call updateAccessToken recursively every 2 secs
+getNowPlaying(new Set(), 2000); // call getNowPlaying recursively every 2 secs 
 
 app.use('/api', auxifyRouter);
 
-// app.listen(port);
 
 
 
