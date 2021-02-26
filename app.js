@@ -75,7 +75,12 @@ var getNowPlayingHelper = function (count, room_id) {
         getNowPlayingHelper(count, room_id);
       }
     })
-      .catch((error) => console.log(error))
+      .catch((error) => {
+        console.log(error);
+        console.log("getNowPlaying() at backend is called at: " + new Date().getHours() + ":" + new Date().getMinutes() + ":" + new Date().getSeconds() + " at room_id: " + room_id);
+        console.log("--------------------------------------------------" + "\n" + "\n" + "\n");
+        getNowPlayingHelper(count, room_id);
+      })
   }, count)
 }
 
@@ -86,23 +91,29 @@ var getNowPlayingHelper = function (count, room_id) {
  * @param {number} count: the time after which getNowPlayingHelper() is called again
 */
 
-var getNowPlaying = async function (prev_room_ids, count) {
-  const rooms = await Room.find().catch(err => console.log(err));
-  let cur_room_ids = [];
-  let new_room_ids = [];
-  for (i = 0; i < rooms.length; i++) {
-    let room_id = rooms[i].id;
-    if (!prev_room_ids.includes(room_id)) new_room_ids.push(room_id);
-    cur_room_ids.push(room_id);
-  }
-  for (i = 0; i < new_room_ids.length; i++) {
-    let room_id = new_room_ids[i];
-    // console.log("New room_id: ", room_id);
-    getNowPlayingHelper(2000, room_id);
-  }
-  setTimeout(function () {
-    getNowPlaying(cur_room_ids, count);
-  }, count)
+var getNowPlaying = function (prev_room_ids, count) {
+  Room.find().then(rooms => {
+    let cur_room_ids = new Set();
+    let new_room_ids = new Set();
+    for (i = 0; i < rooms.length; i++) {
+      let room_id = rooms[i].id;
+      if (!prev_room_ids.has(room_id)) new_room_ids.add(room_id);
+      cur_room_ids.add(room_id);
+    }
+    for (let room_id of new_room_ids) {
+      // console.log("New room_id: ", room_id);
+      getNowPlayingHelper(2000, room_id);
+    }
+    setTimeout(function () {
+      getNowPlaying(cur_room_ids, count);
+    }, count)
+  })
+    .catch(err => {
+      console.log(err);
+      setTimeout(function () {
+        getNowPlaying(prev_room_ids, count);
+      }, count)
+    });
 }
 
 /**
@@ -301,7 +312,7 @@ app.get('/callback', function (req, res) {
   }
 });
 
-getNowPlaying([], 2000); // call getNowPlaying recursively every 2 secs
+getNowPlaying(new Set(), 2000); // call getNowPlaying recursively every 2 secs 
 
 updateAccessToken(2000); //call updateAccessToken recursively every 2 secs
 
