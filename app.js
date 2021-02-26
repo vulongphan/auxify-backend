@@ -264,7 +264,7 @@ app.get('/callback', function (req, res) {
         grant_type: 'authorization_code'
       },
       headers: {
-        'Authorization': 'Basic ' + (new Buffer(spotify_id + ':' + spotify_secret).toString('base64'))
+        'Authorization': 'Basic ' + (Buffer.from(spotify_id + ':' + spotify_secret).toString('base64'))
       },
       json: true
     };
