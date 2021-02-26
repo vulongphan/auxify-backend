@@ -77,8 +77,6 @@ var getNowPlayingHelper = function (count, room_id) {
     })
       .catch((error) => {
         console.log(error);
-        console.log("getNowPlaying() at backend is called at: " + new Date().getHours() + ":" + new Date().getMinutes() + ":" + new Date().getSeconds() + " at room_id: " + room_id);
-        console.log("--------------------------------------------------" + "\n" + "\n" + "\n");
         getNowPlayingHelper(count, room_id);
       })
   }, count)
