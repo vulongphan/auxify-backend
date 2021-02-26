@@ -75,7 +75,12 @@ var getNowPlayingHelper = function (count, room_id) {
         getNowPlayingHelper(count, room_id);
       }
     })
-      .catch((error) => console.log(error))
+      .catch((error) => {
+        console.log(error);
+        console.log("getNowPlaying() at backend is called at: " + new Date().getHours() + ":" + new Date().getMinutes() + ":" + new Date().getSeconds() + " at room_id: " + room_id);
+        console.log("--------------------------------------------------" + "\n" + "\n" + "\n");
+        getNowPlayingHelper(count, room_id);
+      })
   }, count)
 }
 
@@ -86,71 +91,79 @@ var getNowPlayingHelper = function (count, room_id) {
  * @param {number} count: the time after which getNowPlayingHelper() is called again
 */
 
-var getNowPlaying = async function (prev_room_ids, count) {
-  const rooms = await Room.find().catch(err => console.log(err));
-  let cur_room_ids = [];
-  let new_room_ids = [];
-  for (i = 0; i < rooms.length; i++) {
-    let room_id = rooms[i].id;
-    if (!prev_room_ids.includes(room_id)) new_room_ids.push(room_id);
-    cur_room_ids.push(room_id);
-  }
-  for (i = 0; i < new_room_ids.length; i++) {
-    let room_id = new_room_ids[i];
-    // console.log("New room_id: ", room_id);
-    getNowPlayingHelper(2000, room_id);
-  }
-  setTimeout(function () {
-    getNowPlaying(cur_room_ids, count);
-  }, count)
+var getNowPlaying = function (prev_room_ids, count) {
+  Room.find().then(rooms => {
+    let cur_room_ids = new Set();
+    let new_room_ids = new Set();
+    for (i = 0; i < rooms.length; i++) {
+      let room_id = rooms[i].id;
+      if (!prev_room_ids.has(room_id)) new_room_ids.add(room_id);
+      cur_room_ids.add(room_id);
+    }
+    for (let room_id of new_room_ids) {
+      // console.log("New room_id: ", room_id);
+      getNowPlayingHelper(2000, room_id);
+    }
+    setTimeout(function () {
+      getNowPlaying(cur_room_ids, count);
+    }, count)
+  })
+    .catch(err => {
+      console.log(err);
+      setTimeout(function () {
+        getNowPlaying(prev_room_ids, count);
+      }, count)
+    });
 }
 
 /**
- * a recursive function to check access_token for all the rooms in database in each call 
+ * a function to check access_token for all the rooms in database in each call 
  * @param {*} count: the time after which the function gets called again
  */
 
 var updateAccessToken = async function () {
-  let rooms = await Room.find().catch(err => console.log(err));
-  for (i = 0; i < rooms.length; i++) {
-    console.log("Calling updateAccessToken for room_id at: ", rooms[i].id);
-    let end_time = rooms[i].end_time;
-    if (Date.now() >= end_time) {
-      let room_id = rooms[i].id;
-      let refresh_token = rooms[i].refresh_token;
-      let authOptions = {
-        url: 'https://accounts.spotify.com/api/token',
-        headers: { 'Authorization': 'Basic ' + (Buffer.from(spotify_id + ':' + spotify_secret).toString('base64')) },
-        form: {
-          grant_type: 'refresh_token',
-          refresh_token: refresh_token
-        },
-        json: true
-      };
-      doRequest(authOptions).then(res => {
-        let access_token = res.body.access_token;
-        console.log("New access_token for room_id: ", room_id, access_token);
-        let tokenOptions = {
-          url: server_url + '/api/updateToken/' + room_id,
-          body: {
-            access_token: access_token,
-            end_time: Date.now() + duration
+  Room.find().then(rooms => {
+    for (i = 0; i < rooms.length; i++) {
+      console.log("Calling updateAccessToken for room_id at: ", rooms[i].id);
+      let end_time = rooms[i].end_time;
+      if (Date.now() >= end_time) {
+        let room_id = rooms[i].id;
+        let refresh_token = rooms[i].refresh_token;
+        let authOptions = {
+          url: 'https://accounts.spotify.com/api/token',
+          headers: { 'Authorization': 'Basic ' + (Buffer.from(spotify_id + ':' + spotify_secret).toString('base64')) },
+          form: {
+            grant_type: 'refresh_token',
+            refresh_token: refresh_token
           },
-          headers: { 'Content-Type': 'application/json' },
-          json: true,
-        }
-        doRequest(tokenOptions).then(res => {
-          // console.log("statusCode from /updateToken: ", res.statusCode);
-          if (res.statusCode === 200) {
-            console.log("UpdateToken successfully at room_id: ", room_id);
+          json: true
+        };
+        doRequest(authOptions).then(res => {
+          let access_token = res.body.access_token;
+          console.log("New access_token for room_id: ", room_id, access_token);
+          let tokenOptions = {
+            url: server_url + '/api/updateToken/' + room_id,
+            body: {
+              access_token: access_token,
+              end_time: Date.now() + duration
+            },
+            headers: { 'Content-Type': 'application/json' },
+            json: true,
           }
-          else {
-            console.log(res.body.error);
-          }
+          doRequest(tokenOptions).then(res => {
+            // console.log("statusCode from /updateToken: ", res.statusCode);
+            if (res.statusCode === 200) {
+              console.log("UpdateToken successfully at room_id: ", room_id);
+            }
+            else {
+              console.log(res.body.error);
+            }
+          })
         })
-      })
+      }
     }
-  }
+  })
+    .catch(err => console.log(err))
 }
 
 var stateKey = 'spotify_auth_state';
@@ -298,15 +311,12 @@ app.get('/callback', function (req, res) {
   }
 });
 
-setInterval(updateAccessToken, 3000); // call updateAccessToken every 3 secs
+setInterval(updateAccessToken, 2000); // call updateAccessToken non-recursively every 2 secs
 
-getNowPlaying([], 2000); // call getNowPlaying recursively every 2 secs
-
-
+getNowPlaying(new Set(), 2000); // call getNowPlaying recursively every 2 secs 
 
 app.use('/api', auxifyRouter);
 
-// app.listen(port);
 
 
 
